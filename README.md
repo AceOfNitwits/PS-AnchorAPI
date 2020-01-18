@@ -9,11 +9,11 @@ Includes functions for obtaining and refreshing the OAuth token you'll need to u
 
 ## Anchor-ApiReporting.ps1
 
-Includes functions that obtain information from the API. No destructive potential.
+Includes functions that obtain information from the API. No destructive potential. 🐇
 
 ## Anchor-ApiManagement.ps1
 
-Not yet available. This will include functions for modifying data. High potential to be distructive if used incorrectly.
+Not yet available. This will include functions for modifying data. High potential to be distructive if used incorrectly. 💣
 
 ## Anchor-BackupCheck.ps1
 
