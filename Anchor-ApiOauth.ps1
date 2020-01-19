@@ -6,6 +6,10 @@
 $oauthUri = "https://clocktowertech.syncedtool.com/oauth/token"
 
 Function Get-AnchorOauthToken{
+<#
+    .LINK
+    http://developer.anchorworks.com/oauth2/#request-an-access-token
+#>
 param($Username, $Password)
     $grantType = "password"
     $clientId = "anchor"
@@ -59,6 +63,11 @@ param($Username, $Password)
 }
 
 Function Refresh-AnchorOauthToken{
+<#
+    .LINK
+    http://developer.anchorworks.com/oauth2/#refresh-an-access-token
+#>
+
 param($CurrentToken)
     $grantType = "refresh_token"
     $clientId = "anchor"

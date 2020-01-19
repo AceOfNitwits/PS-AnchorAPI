@@ -10,13 +10,45 @@
 #endregion
 
 # Base API URI
-$apiUri = "https://clocktowertech.syncedtool.com/api/2"
+[string]$global:apiUri = "https://clocktowertech.syncedtool.com/api/2"
 
 
-# Returns the current Api Version
 Function Get-AnchorApiVersion {
+<#
+    .SYNOPSIS
+    Returns an object representing the current Anchor API Version at the given host.
+
+    .DESCRIPTION
+    Returns an object representing the current Anchor API Version at the given host.
+    Requires a valid OauthToken
+
+    .NOTES
+    
+
+    .PARAMETER OauthToken
+    Object containing OauthToken data.
+
+    .INPUTS
+    This function does not accept pipeline input
+
+    .OUTPUTS
+    AnchorApi version object
+
+    .EXAMPLE
+    C:\PS> Get-AnchorApiVersion -OauthToken $anchorOauthToken
+    version   
+    -------   
+    2.7.2.1581
+
+    .LINK
+    http://developer.anchorworks.com/v2/#version
+
+    .LINK
+    Get-AnchorOauthToken
+#>
+    [Alias('AnchorApi')]
     param(
-        [Parameter(Mandatory)]$OauthToken
+        [Parameter(Mandatory,Position=0)][object]$OauthToken
     )
     $apiEndpoint = "version"
     $results = Get-AnchorData -ApiEndpoint $apiEndPoint -OauthToken $OauthToken
@@ -24,10 +56,132 @@ Function Get-AnchorApiVersion {
 }
 
 
-# Accepts 1 or more objects containing Anchor org id in the "id" property or a list of AnchorOrg ids.
-# Returns AnchorOrg objects for each id.
 Function Get-AnchorOrg {
+<#
+    .SYNOPSIS
+    Returns a collection of AnchorOrg objects for a given AnchorOrg id or set of id's.
+
+    .DESCRIPTION
+    Returns a collection of AnchorOrg objects.
+    Accepts one or more AnchorOrg id's via argument or a colleciton of AnchorOrg objects from the pipeline.
+
+    .NOTES
+    
+
+    .PARAMETER OauthToken
+    Object containing OauthToken data.
+
+    .PARAMETER id
+    One or more AnchorOrg id's.
+
+    .INPUTS
+    A collection of AnchorOrg objects
+
+    .OUTPUTS
+    A collection of AnchorOrg objects
+
+    .EXAMPLE
+    C:\PS> Get-AnchorOrg -OauthToken $anchorOauthToken -id 321
+    active                      : True
+    bandwidth_throttle          : 
+    created                     : 2013-03-19T01:07:00
+    default_encryption          : 2
+    description                 : 
+    email                       : mailbox@domain.tld
+    email_server_id             : 681
+    email_templates             : True
+    hostname                    : company.syncedtool.com
+    i18n                        : @{id=321; locale=en; timezone=America/New_York;
+                                  type=organization_i18n}
+    id                          : 321
+    locale                      : en
+    name                        : Company, Inc.
+    parent_id                   : 4871
+    plan_id                     : 
+    policy                      : @{ad_enabled=True; admin_browse_files=True; 
+                                  admin_browse_remote=True; admin_create_users=True; 
+                                  api_ratelimit=; api_ratelimit_enabled=False; 
+                                  backups_enabled=True; backups_purge_deleted=True; 
+                                  backups_purge_deleted_frequency=2555; 
+                                  backups_trim_revisions=True; 
+                                  backups_trim_revisions_frequency=2555; 
+                                  branding_enabled=True; change_password_frequency=; 
+                                  company_id=361; create_orgs_until=; 
+                                  deactivate_token_frequency=; excluded_extensions=.$$,.$db,
+                                  .113,.3g2,.3gp2,.3gpp,.3mm,.abc,.abf,.abk,.afm,.ani,.ann,.
+                                  asf,.avs,.bac,.bck,.bcm,.bdb,.bdf,.bkf,.bkp,.blocked,.bmk,
+                                  .bsc,.bsf,.cerber,.cf1,.chq,.chw,.cpl,.cry,.cur,.dev,.dfon
+                                  t,.dmp,.dv,.dvd,.dvr,.dvr-ms,.evt,.ffa,.ffl,.ffo,.ffx,.flc
+                                  ,.flv,.fnt,.fon,.ftg,.fts,.fxp,.grp,.hdd,.hxi,.hxq,.hxr,.h
+                                  xs,.idb,.idx,.ilk,.ipf,.isp,.its,.jar,.jse,.kbd,.kext,.key
+                                  ,.lex,.lib,.library-ms,.locky,.log,.lwfn,.m1p,.m1v,.m2p,.m
+                                  2v,.m4v,.mem,.mov,.mp2v,.mpe,.mpeg,.mpv,.mpv2,.msc,.msm,.n
+                                  cb,.nt,.nvram,.obj,.obs,.ocx,.old,.ost,.otf,.pch,.pf,.pfa,
+                                  .pfb,.pfm,.pnf,.pol,.pref,.prf,.prg,.prn,.pvs,.pwl,.qt,.rd
+                                  b,.rll,.rox,.sbr,.scf,.sdb,.shb,.silent,.suit,.swp,.theme,
+                                  .tivo,.tmp,.tms,.ttc,.v2i,.vbe,.vga,.vgd,.vhd,.video,.vmc,
+                                  .vmdk,.vmsd,.vmsn,.vmx,.win,.wpk; 
+                                  file_server_enabled=True; locked_extensions=.doc,.docx,.xl
+                                  s,.xlsx,.ppt,.pptx,.pdf,.txt,.xlsb,.xlsm,.csv,.docm,.dotx,
+                                  .dotm,.pub,.wpd,.odt,.ott,.oth,.odm,.ots,.odp,.odg,.otp,.o
+                                  df,.oxt,.odc,.ods,.vdx,.vsx,.vtx,.one; 
+                                  max_file_size=25000; num_orgs_maximum=0; 
+                                  num_users_maximum=185; num_users_minimum=0; 
+                                  psa_enabled=True; purge_deleted=True; 
+                                  purge_deleted_frequency=2555; require_mobile_lock=True; 
+                                  require_two_step_auth=True; secure_shares=False; 
+                                  service_plans_enabled=True; space_quota=194562018508800; 
+                                  space_quota_formatted=176.95 TB; trial_length_days=0; 
+                                  trim_revisions=True; trim_revisions_x=2555; type=policy; 
+                                  user_create_backups=True; user_create_shares=True; 
+                                  user_lock_files=True; user_overwrite_collisions=False; 
+                                  user_purge_deleted=False; user_rollback=True; 
+                                  user_trim_revisions=False; web_editor_enabled=True; 
+                                  web_preview_enabled=True; web_wopi_enabled=false; 
+                                  webdav_enabled=True}
+    privacy_mode                : False
+    share_disclaimer            : 
+    slug                        : company
+    subscription_uuid           : 
+    throttle_exception_days     : 
+    throttle_exception_dow      : 
+    throttle_exception_end      : 
+    throttle_exception_start    : 
+    throttle_exception_throttle : 
+    throttled                   : False
+    timezone                    : America/New_York
+    trial_until                 : 
+    type                        : organization
+
+    .EXAMPLE
+    C:\PS> $anchorOrgs | Get-AnchorOrg -OauthToken $anchorOauthToken
+    active                      : True
+    bandwidth_throttle          : 
+    created                     : 2013-03-19T01:07:00
+    default_encryption          : 2
+    description                 : 
+    email                       : mailbox@domain.tld
+    email_server_id             : 681
+    email_templates             : True
+    hostname                    : company.syncedtool.com
+    i18n                        : @{id=321; locale=en; timezone=America/New_York;
+                                  type=organization_i18n}
+    id                          : 321
+    locale                      : en
+    name                        : Company, Inc.
+    parent_id                   : 4871
+    plan_id                     : 
+    policy                      : @{ad_enabled=True; admin_browse_files=True; 
+    (...)
+
+    .LINK
+    http://developer.anchorworks.com/v2/#get-an-organization
+
+    .LINK
+    Get-AnchorOauthToken
+#>
     [CmdletBinding()]
+    [Alias('AnchorOrg')]
     param(
         [Parameter(Mandatory=$true,Position=0)]$OauthToken,
         [Parameter(Mandatory=$true,Position=1,ValueFromPipelineByPropertyName)][string[]]$id
@@ -141,7 +295,104 @@ Function Get-AnchorRootMetadata {
 
 
 Function Get-AnchorRootFilesModifiedSince {
+<#
+    .SYNOPSIS
+    Returns file objects that have been modified since a given date.
+
+    .DESCRIPTION
+    Returns file objects that have been modified since a given date.
+    Accepts a collection of AnchorRoot objects from the pipeline or a number of AnchorRootId strings in the arguments, as well as a DateTime from which to begin the search.
+    
+    .NOTES
+    (As of at least 2020-01-19) there seems to be a discrepency between the 'since' date in the API call, and the 'modified' property of the files, as you can receive files with 'modified' dates prior to the 'since' date.
+
+    .PARAMETER OauthToken
+    Object containing OauthToken data.
+
+    .PARAMETER id
+    AnchorRoot id number. Can accept an array of id numbers.
+
+    .PARAMETER Since
+    PowerShell DateTime object indicating the oldest modified file to return.
+
+    .INPUTS
+    AnchorRoot object, containing at least the .id property.
+
+    .OUTPUTS
+    AnchorFile objects
+
+    .EXAMPLE
+    C:\PS> Get-AnchorRootFilesModifiedSince -OauthToken $anchorOauthToken -id 123456 -Since (Get-Date).AddDays(-7)
+    created        : 2020-01-15T20:45:03
+    id             : 33219
+    is_deleted     : False
+    is_locked      : False
+    locks          : {}
+    modified       : 2020-01-15T20:45:03
+    path           : /ATT00/00426820200115155049001.pdf
+    revision_id    : 34387
+    root_id        : 123456
+    size           : 258338
+    size_formatted : 252.28 KB
+    type           : file
+    (...)
+
+    .EXAMPLE
+    C:\PS> Get-AnchorRootFilesModifiedSince -OauthToken $anchorOauthToken -id 123456, 123457 -Since (Get-Date).AddDays(-7)
+    created        : 2020-01-15T20:45:03
+    id             : 33219
+    is_deleted     : False
+    is_locked      : False
+    locks          : {}
+    modified       : 2020-01-15T20:45:03
+    path           : /ATT00/00426820200115155049001.pdf
+    revision_id    : 34387
+    root_id        : 123456
+    size           : 258338
+    size_formatted : 252.28 KB
+    type           : file
+    (...)
+
+    .EXAMPLE
+    C:\PS> Get-AnchorRootFilesModifiedSince -OauthToken $anchorOauthToken -id $myIdArray -Since (Get-Date).AddDays(-7)
+    created        : 2020-01-15T20:45:03
+    id             : 33219
+    is_deleted     : False
+    is_locked      : False
+    locks          : {}
+    modified       : 2020-01-15T20:45:03
+    path           : /ATT00/00426820200115155049001.pdf
+    revision_id    : 34387
+    root_id        : 123456
+    size           : 258338
+    size_formatted : 252.28 KB
+    type           : file
+    (...)
+
+    .EXAMPLE
+    C:\PS> $myAnchorRoots | Get-AnchorRootFilesModifiedSince -OauthToken $anchorOauthToken -Since (Get-Date).AddDays(-7)
+    created        : 2020-01-15T20:45:03
+    id             : 33219
+    is_deleted     : False
+    is_locked      : False
+    locks          : {}
+    modified       : 2020-01-15T20:45:03
+    path           : /ATT00/00426820200115155049001.pdf
+    revision_id    : 34387
+    root_id        : 123456
+    size           : 258338
+    size_formatted : 252.28 KB
+    type           : file
+    (...)
+
+    .LINK
+    API reference: http://developer.anchorworks.com/v2/#list-recently-modified-files
+
+    .LINK
+    Get-AnchorOauthToken
+#>
     [CmdletBinding()]
+    [Alias("AnchorRootModSince")]
     param(
         [Parameter(Mandatory,Position=0)]$OauthToken,
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor root id')][string[]]$id,
@@ -192,26 +443,104 @@ Function Get-AnchorRootLastModified {
     }
 }
 
-
+# Accepts a number of Anchor machine id's or a piped collection of machine objects with .id properties.
+# Returns the backup roots associated with each machine ID.
+# It was a 500% increase in the lines of code, but it runs 210% faster using runspaces when passing all machines.
 Function Get-AnchorMachineBackups {
     [CmdletBinding()]
     param(
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor machine id')][string[]]$id, 
         [Parameter(Mandatory,Position=0)]$OauthToken
     )
+    begin{
+        #region BLOCK 1: Create and open runspace pool, setup runspaces array with min and max threads
+        #   Special thanks to Chrissy LeMaire (https://blog.netnerds.net/2016/12/runspaces-simplified/) for helping me to (sort of) understand how to utilize runspaces.
+
+        # Custom functions are not available to runspaces. 🤦‍
+        # We need to import some custom functions and script variables into the runspacepool, so we'll have to jump through hoops now.
+        #   https://stackoverflow.com/questions/51818599/how-to-call-outside-defined-function-in-runspace-scriptblock
+        $bagOfFunctions = @(
+            'Get-AnchorData',
+            'Validate-AnchorOauthToken',
+            'Refresh-AnchorOauthToken',
+            'Get-AnchorOauthStatus'
+        )
+        $bagOfVariables = @(
+            'apiUri'
+        )
+        $InitialSessionState = [initialsessionstate]::Create()
+        foreach ($function in $bagOfFunctions){
+            #Get body of function
+            $functionDefinition = Get-Content "Function:\$function" -ErrorAction Stop
+            #Create a sessionstate function entry
+            $SessionStateFunction = New-Object System.Management.Automation.Runspaces.SessionStateFunctionEntry -ArgumentList "$function", $functionDefinition
+            #Create a SessionStateFunction
+            $InitialSessionState.Commands.Add($SessionStateFunction)
+        }
+        foreach ($varName in $bagOfVariables){
+            #Get variable
+            $variable = Get-Variable -Name $varName
+            #Create a sessionstate variable entry
+            $SessionStateVariable = New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry($variable.Name, $variable.Value, $null)
+            #Create a SessionStateVariable
+            $InitialSessionState.Variables.Add($SessionStateVariable)
+        }
+            $InitialSessionState.LanguageMode = 'FullLanguage' #Without this, you get an error when you try to call EndInvoke at the end.
+
+        # Now back to our regularly scheduled runspace pool creation
+        $pool = [RunspaceFactory]::CreateRunspacePool(1,[int]$env:NUMBER_OF_PROCESSORS+1,$InitialSessionState,$Host)
+        $pool.ApartmentState = "MTA"
+        $pool.Open()
+        $runspaces = @() #$results = @()
+        #endregion
+
+        #region BLOCK 2: Create reusable scriptblock. This is the workhorse of the runspace. Think of it as a function.
+        $scriptblock = {
+            Param (
+                [string]$machineId,
+                [object]$OauthToken
+            )
+            $apiEndpoint = "machine/$machineId/backups"
+            $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndPoint
+            $results
+        }
+        #endregion
+    }
     process{
         foreach ($machineId in $id){
-            $apiEndpoint = "machine/$machineId/backups"
-            Write-Progress -Activity "Looking for machine backups" -CurrentOperation $machineId
-            $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndPoint
-            # the machine backups endpoint may not always have results.
-            #   Therefore, we need to do some extra work.
-            If ($results){
-                $results
-            }
+            #region BLOCK 3: Create runspace and add to runspace pool
+            $runspaceParams = @{'machineId'="$machineId";'OauthToken'=$OauthToken}
+            $runspace = [PowerShell]::Create()
+            $null = $runspace.AddScript($scriptblock)
+            $null = $runspace.AddParameters($runspaceParams)
+            $runspace.RunspacePool = $pool
+            #endregion
+
+            #region BLOCK 4: Add runspace to runspaces collection and "start" it
+            # Asynchronously runs the commands of the PowerShell object pipeline
+            $runspaces += [PSCustomObject]@{ Pipe = $runspace; Status = $runspace.BeginInvoke() }
+            #endregion
         }
     }
+    end{
+        #region BLOCK 5: Wait for runspaces to finish
+        while ($runspaces.Status -ne $null){
+            $completed = $runspaces | Where-Object { $_.Status.IsCompleted -eq $true }
+            foreach ($runspace in $completed)
+            {
+                $runspace.Pipe.EndInvoke($runspace.Status)
+                $runspace.Status = $null
+            }
+        }
+        #endregion
+
+        #region BLOCK 6: Clean up
+        $pool.Close() 
+        $pool.Dispose()
+        #endregion
+    }
 }
+
 
 # Generic function for returning data from an Anchor API endpoint.
 # The full uri of the endpoint is passed as a string.
@@ -230,9 +559,8 @@ Function Get-AnchorData {
     $accessToken = $OauthToken.access_token
     $headers = @{'Authorization' = "$tokenType $accessToken"}
     $body = $ApiQuery
-    
+
     $results = Invoke-RestMethod -Uri "$apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $body
-    # Write-Host ($results | out-string)
     
     If ($results.PSobject.Properties.name -eq "results") { # The returned object contains a property named "results" and is therefore a collection. We have to do some magic to extract all the data. 
         #Write-Host "Collection"
@@ -323,6 +651,25 @@ Function Get-AnchorDataOld {
     Return $return
 }
 
+Function Get-AnchorMachineBackupsOld {
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor machine id')][string[]]$id, 
+        [Parameter(Mandatory,Position=0)]$OauthToken
+    )
+    process{
+        foreach ($machineId in $id){
+            $apiEndpoint = "machine/$machineId/backups"
+            Write-Progress -Activity "Looking for machine backups" -CurrentOperation $machineId
+            $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndPoint
+            # the machine backups endpoint may not always have results.
+            #   Therefore, we need to do some extra work.
+            If ($results){
+                $results
+            }
+        }
+    }
+}
 
 
 #endregion
