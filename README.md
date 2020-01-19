@@ -19,3 +19,11 @@ Not yet available. This will include functions for modifying data. High potentia
 ## Anchor-BackupCheck.ps1 
 
 Contains some examples of how to use the existing functions. To use, put all files in the same folder, and make sure you are in that folder when you run this script.
+
+# To-do 
+- Create management functions
+- Finish populating reporting functions
+- More examples. 
+- Use jobs to make long functions complete faster
+- Investigate creating some sort of "session" to manage Oauth info, rather than passing the value to each function. 
+- Convert to a module
