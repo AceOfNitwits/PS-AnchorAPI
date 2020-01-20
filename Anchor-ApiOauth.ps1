@@ -52,14 +52,14 @@ param($Username, $Password)
         $refreshWindow = $oauthToken.expires_in
         [datetime]$oauthExpiry = (Get-Date).AddSeconds($refreshWindow)
         [datetime]$oauthRefresh = (Get-Date).AddSeconds($refreshWindow / 2)
-        $newToken = $oauthToken | Select-Object *, @{N='expires_on';E={$oauthExpiry}}, @{N='refresh_after';E={$oauthRefresh}}
+        $Script:anchorOauthToken = $oauthToken | Select-Object *, @{N='expires_on';E={$oauthExpiry}}, @{N='refresh_after';E={$oauthRefresh}}
 
-        Write-Host "Oauth token obtained. New token will expire on $($newToken.expires_on)`." -BackgroundColor Black -ForegroundColor Green
+        Write-Host "Oauth token obtained. New token will expire on $($Script:anchorOauthToken.expires_on)`." -BackgroundColor Black -ForegroundColor Green
     }
     Else {
         Write-Host "Oauth token not obtained!" -BackgroundColor Black -ForegroundColor Red
     }
-    Return $newToken
+    #Return $newToken
 }
 
 Function Refresh-AnchorOauthToken{
@@ -106,13 +106,18 @@ param($OauthToken)
 Function Validate-AnchorOauthToken {
     param(
         $OauthToken, 
-        [switch]$ForceRefresh
+        [switch]$ForceRefresh,
+        [switch]$NoRefresh
     )
     #Write-Host $OauthToken.refresh_token
     $tokenStatus = Get-AnchorOauthStatus $OauthToken
     Switch ($tokenStatus){
         "No Token Provided" {Write-Host "Warning. No token provided."}
-        "Refresh Required" {Refresh-AnchorOauthToken $OauthToken}
+        "Refresh Required" {
+            If(!$NoRefresh){
+                Refresh-AnchorOauthToken $OauthToken
+            }
+        }
     }
     If ($ForceRefresh){Refresh-AnchorOauthToken $OauthToken}
     #Return $OauthToken

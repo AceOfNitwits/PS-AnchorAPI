@@ -4,8 +4,6 @@
 
 # Query parameters go in the body, formatted as a hash table @{"parameter_name"="value"}
 # Format date parameters like this @{"since"=(Get-Date (Get-Date).AddDays(-1) -Format "yyyy-MM-ddThh:mm:ss")}
-# A valid Oauth token must be passed to all functions.
-#   The functions will refresh the token if needed.
 
 #endregion
 
@@ -24,10 +22,6 @@ Function Get-AnchorApiVersion {
 
     .NOTES
     
-
-    .PARAMETER OauthToken
-    Object containing OauthToken data.
-
     .INPUTS
     This function does not accept pipeline input
 
@@ -47,11 +41,11 @@ Function Get-AnchorApiVersion {
     Get-AnchorOauthToken
 #>
     [Alias('AnchorApi')]
-    param(
-        [Parameter(Mandatory,Position=0)][object]$OauthToken
-    )
+    #param(
+    #    [Parameter(Mandatory,Position=0)][object]$OauthToken
+    #)
     $apiEndpoint = "version"
-    $results = Get-AnchorData -ApiEndpoint $apiEndPoint -OauthToken $OauthToken
+    $results = Get-AnchorData -ApiEndpoint $apiEndPoint -OauthToken $Script:anchorOauthToken
     $results
 }
 
@@ -67,10 +61,6 @@ Function Get-AnchorOrg {
 
     .NOTES
     
-
-    .PARAMETER OauthToken
-    Object containing OauthToken data.
-
     .PARAMETER id
     One or more AnchorOrg id's.
 
@@ -183,15 +173,15 @@ Function Get-AnchorOrg {
     [CmdletBinding()]
     [Alias('AnchorOrg')]
     param(
-        [Parameter(Mandatory=$true,Position=0)]$OauthToken,
-        [Parameter(Mandatory=$true,Position=1,ValueFromPipelineByPropertyName)][string[]]$id
+        #[Parameter(Mandatory=$true,Position=0)]$OauthToken,
+        [Parameter(Mandatory=$true,Position=0,ValueFromPipelineByPropertyName)][string[]]$id
         
     )
     process{
         # We might have multiple $id values passed via a function parameter . . . and that's okay.
         ForEach ($orgId in $id){
             $apiEndpoint = "organization/$orgId"
-            $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndPoint
+            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
             $results
         }
     }
@@ -202,14 +192,13 @@ Function Get-AnchorOrg {
 Function Get-AnchorOrgMachines {
     [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory=$true,Position=1,HelpMessage='Organization ID')][string[]]$id,
-        [Parameter(Mandatory=$true,position=0)]$OauthToken
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory=$true,Position=0,HelpMessage='Organization ID')][string[]]$id
     )
     process{
         #We might get multiple $id values from the parameter.
         ForEach ($orgId in $id){
             $apiEndpoint = "organization/$($orgId)/machines"
-            $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndPoint
+            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndPoint
             # If there are no results, we don't want to return an empty object with just the organization property populated.
             If($results){
                 $results | Select-Object *, @{N='organization';E={@{'id'="$orgId"}}} #, @{N='org_name';E={$orgName}}
@@ -223,15 +212,13 @@ Function Get-AnchorOrgMachines {
 Function Get-AnchorOrgChildren {
     [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor Organization ID')][string[]]$id,
-        [Parameter(Mandatory,Position=0)]$OauthToken
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
     )
     process{
         #There may be multiple $id values passed by the function -id parameter
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$orgId/organizations"
-            $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndPoint
-            # Results arelady include parent_id so we can just return them as-is.
+            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndPoint
             $results
         }
     }
@@ -241,16 +228,14 @@ Function Get-AnchorOrgChildren {
 Function Get-AnchorOrgRoots {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory,Position=0)]$OauthToken,
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor Organization ID')][string[]]$id
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
         
     )
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/roots"
-            $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndpoint
-            # Results already include company_id, so we can return them as-is
-            $results # | Select-Object *, @{N='organization';E={@{'id'="$orgId"}}}
+            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+            $results
         }
     }
 }
@@ -259,8 +244,7 @@ Function Get-AnchorOrgRoots {
 Function Get-AnchorRootMetadata {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory,Position=0)]$OauthToken,
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor Root ID')][string[]]$id, 
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Root ID')][string[]]$id, 
         [Parameter(HelpMessage='Include collection of child objects (files and folders)')][switch]$IncludeChildren,
         [Parameter(HelpMessage='Include deleted items in child objects')][switch]$IncludeDeleted,
         [Parameter(HelpMessage='Include information about locks')][switch]$IncludeLockInfo,
@@ -280,7 +264,7 @@ Function Get-AnchorRootMetadata {
         foreach ($rootId in $id){
             $apiEndpoint = "files/$rootId"
             try{
-                $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
             }
             catch{
                 Switch -regex ($Error[0].Exception){
@@ -306,9 +290,6 @@ Function Get-AnchorRootFilesModifiedSince {
     .NOTES
     (As of at least 2020-01-19) there seems to be a discrepency between the 'since' date in the API call, and the 'modified' property of the files, as you can receive files with 'modified' dates prior to the 'since' date.
 
-    .PARAMETER OauthToken
-    Object containing OauthToken data.
-
     .PARAMETER id
     AnchorRoot id number. Can accept an array of id numbers.
 
@@ -322,7 +303,7 @@ Function Get-AnchorRootFilesModifiedSince {
     AnchorFile objects
 
     .EXAMPLE
-    C:\PS> Get-AnchorRootFilesModifiedSince -OauthToken $anchorOauthToken -id 123456 -Since (Get-Date).AddDays(-7)
+    C:\PS> Get-AnchorRootFilesModifiedSince -id 123456 -Since (Get-Date).AddDays(-7)
     created        : 2020-01-15T20:45:03
     id             : 33219
     is_deleted     : False
@@ -338,7 +319,7 @@ Function Get-AnchorRootFilesModifiedSince {
     (...)
 
     .EXAMPLE
-    C:\PS> Get-AnchorRootFilesModifiedSince -OauthToken $anchorOauthToken -id 123456, 123457 -Since (Get-Date).AddDays(-7)
+    C:\PS> Get-AnchorRootFilesModifiedSince -id 123456, 123457 -Since (Get-Date).AddDays(-7)
     created        : 2020-01-15T20:45:03
     id             : 33219
     is_deleted     : False
@@ -354,7 +335,7 @@ Function Get-AnchorRootFilesModifiedSince {
     (...)
 
     .EXAMPLE
-    C:\PS> Get-AnchorRootFilesModifiedSince -OauthToken $anchorOauthToken -id $myIdArray -Since (Get-Date).AddDays(-7)
+    C:\PS> Get-AnchorRootFilesModifiedSince -id $myIdArray -Since (Get-Date).AddDays(-7)
     created        : 2020-01-15T20:45:03
     id             : 33219
     is_deleted     : False
@@ -370,7 +351,7 @@ Function Get-AnchorRootFilesModifiedSince {
     (...)
 
     .EXAMPLE
-    C:\PS> $myAnchorRoots | Get-AnchorRootFilesModifiedSince -OauthToken $anchorOauthToken -Since (Get-Date).AddDays(-7)
+    C:\PS> $myAnchorRoots | Get-AnchorRootFilesModifiedSince -Since (Get-Date).AddDays(-7)
     created        : 2020-01-15T20:45:03
     id             : 33219
     is_deleted     : False
@@ -394,9 +375,8 @@ Function Get-AnchorRootFilesModifiedSince {
     [CmdletBinding()]
     [Alias("AnchorRootModSince")]
     param(
-        [Parameter(Mandatory,Position=0)]$OauthToken,
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor root id')][string[]]$id,
-        [Parameter(Mandatory,Position=2,HelpMessage='PowerShell DateTime object indicating the oldest modified file to return')][datetime]$Since
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor root id')][string[]]$id,
+        [Parameter(Mandatory,Position=1,HelpMessage='PowerShell DateTime object indicating the oldest modified file to return')][datetime]$Since
     )
     begin{
         $apiQuery = @{'since' = "$(Get-Date($Since) -Format 'yyyy-MM-ddThh:mm:ss')"}
@@ -404,7 +384,7 @@ Function Get-AnchorRootFilesModifiedSince {
     process{
         foreach ($rootId in $id){
             $apiEndpoint = "files/$rootId/modified_since"
-            $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
             $results
         }
     }
@@ -417,29 +397,113 @@ Function Get-AnchorRootFilesModifiedSince {
 Function Get-AnchorRootLastModified {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory,Position=0)]$OauthToken,
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor root id')][string[]]$id
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor root id')][string[]]$id,
+        [Parameter(Position=1,HelpMessage='Number of threads to use when querying multiple roots. Default = 100')][int]$MaxThreads=100
     )
-    process{
-        foreach ($rootId in $id){
-            $lookBackDays = -1 #Initialize
-            $Since = (Get-Date).AddDays($lookBackDays) #Initialize
+    begin{
+        #region BLOCK 1: Create and open runspace pool, setup runspaces array with min and max threads
+        #   Special thanks to Chrissy LeMaire (https://blog.netnerds.net/2016/12/runspaces-simplified/) for helping me to (sort of) understand how to utilize runspaces.
+
+        # Custom functions are not available to runspaces. 🤦‍
+        # We need to import some custom functions and script variables into the runspacepool, so we'll have to jump through hoops now.
+        #   https://stackoverflow.com/questions/51818599/how-to-call-outside-defined-function-in-runspace-scriptblock
+        $bagOfFunctions = @(
+            'Get-AnchorData',
+            'Validate-AnchorOauthToken',
+            'Refresh-AnchorOauthToken',
+            'Get-AnchorOauthStatus'
+        )
+        $bagOfVariables = @(
+            'apiUri'
+        )
+
+        $InitialSessionState = [initialsessionstate]::CreateDefault() #CreateDefault is important. If we just use Create, it creates a blank-slate session that has almost no functionality.
+        foreach ($function in $bagOfFunctions){
+            #Get body of function
+            $functionDefinition = Get-Content "Function:\$function" -ErrorAction Stop
+            #Create a sessionstate function entry
+            $SessionStateFunction = New-Object System.Management.Automation.Runspaces.SessionStateFunctionEntry -ArgumentList "$function", $functionDefinition
+            #Create a SessionStateFunction
+            $InitialSessionState.Commands.Add($SessionStateFunction)
+        }
+        foreach ($varName in $bagOfVariables){
+            #Get variable
+            $variable = Get-Variable -Name $varName
+            #Create a sessionstate variable entry
+            $SessionStateVariable = New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry($variable.Name, $variable.Value, $null)
+            #Create a SessionStateVariable
+            $InitialSessionState.Variables.Add($SessionStateVariable)
+        }
+        # End Hoops
+
+        # Now back to our regularly scheduled runspace pool creation
+        $pool = [RunspaceFactory]::CreateRunspacePool(1,$MaxThreads,$InitialSessionState,$Host)
+        $pool.ApartmentState = "MTA"
+        $pool.Open()
+        $runspaces = @()
+        #endregion
+
+        #region BLOCK 2: Create reusable scriptblock. This is the workhorse of the runspace. Think of it as a function.
+        
+        $scriptblock = {
+            Param (
+                [string]$rootId,
+                [object]$OauthToken
+            )
+            $apiEndpoint = "files/$rootId/modified_since"
+            [int]$lookBackDays = -1 #Initialize
+            [datetime]$now = Get-Date
             Do{
-                Write-Progress -Id $rootID -Activity "Analyzing root $rootID" -Status "LookBackDays = $lookBackDays"
-                $apiEndpoint = "files/$rootId/modified_since"
-                $apiQuery = @{'since' = "$(Get-Date($Since) -Format 'yyyy-MM-ddThh:mm:ss')"}
+                [datetime]$mySince = $now.AddDays($lookBackDays)
+                $apiQuery = @{'since' = "$(Get-Date($mySince) -Format 'yyyy-MM-ddThh:mm:ss')"}
+                
                 try {
-                    $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+                    $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery -NoRefreshToken #Adding NoRefreshToken, because it doesn't work within a runspace.
                 } catch {
-                    $results = [PSCustomObject]@{'root_id' = "$rootId";'modified'='api_error'}
+                    [PSCustomObject]@{'id' = "$rootId";'modified'='api_error'}
                 }
                 $results | Sort-Object -Property modified -Descending | Select-Object root_id, modified -First 1 | Add-Member -MemberType AliasProperty -Name id -Value root_id -PassThru | Select-Object id, modified
                 $lookBackDays = $lookBackDays * 2
-                $Since = (Get-Date).AddDays($lookBackDays)
             }Until($results -or ($lookBackDays -lt -2048) -or $halt) # Let's not get carried away. 5.6 years ought to be enough! Also, remember, we're counting backward.
-            If ($lookBackDays -lt -2555){[PSCustomObject]@{'id' = "$rootId";'modified'='no_files_found'}}
-            Write-Progress -Id $RootID -Activity "Analyzing root $RootID" -Completed
+            If ($lookBackDays -lt -2048){
+                [PSCustomObject]@{'id' = "$rootId";'modified'='no_files_found'}
+            }
         }
+        #endregion
+    }
+    process{
+        foreach ($rootId in $id){
+            #region BLOCK 3: Create runspace and add to runspace pool
+            $runspaceParams = @{'rootId'="$rootId";'OauthToken'=$Script:anchorOauthToken}
+            $runspace = [PowerShell]::Create()
+            $null = $runspace.AddScript($scriptblock)
+            $null = $runspace.AddParameters($runspaceParams)
+            $runspace.RunspacePool = $pool
+            #endregion
+
+            #region BLOCK 4: Add runspace to runspaces collection and "start" it
+            # Asynchronously runs the commands of the PowerShell object pipeline
+            $runspaces += [PSCustomObject]@{ Pipe = $runspace; Status = $runspace.BeginInvoke() }
+            #endregion
+
+        }
+    }
+    end{
+        #region BLOCK 5: Wait for runspaces to finish
+        while ($runspaces.Status -ne $null){
+            $completed = $runspaces | Where-Object { $_.Status.IsCompleted -eq $true }
+            foreach ($runspace in $completed)
+            {
+                $runspace.Pipe.EndInvoke($runspace.Status)
+                $runspace.Status = $null
+            }
+        }
+        #endregion
+
+        #region BLOCK 6: Clean up
+        $pool.Close() 
+        $pool.Dispose()
+        #endregion
     }
 }
 
@@ -449,8 +513,7 @@ Function Get-AnchorRootLastModified {
 Function Get-AnchorMachineBackups {
     [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor machine id')][string[]]$id, 
-        [Parameter(Mandatory,Position=0)]$OauthToken
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor machine id')][string[]]$id
     )
     begin{
         #region BLOCK 1: Create and open runspace pool, setup runspaces array with min and max threads
@@ -501,7 +564,7 @@ Function Get-AnchorMachineBackups {
                 [object]$OauthToken
             )
             $apiEndpoint = "machine/$machineId/backups"
-            $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndPoint
+            $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndPoint -NoRefreshToken #Adding NoRefreshToken, because it doesn't work within a runspace.
             $results
         }
         #endregion
@@ -509,7 +572,7 @@ Function Get-AnchorMachineBackups {
     process{
         foreach ($machineId in $id){
             #region BLOCK 3: Create runspace and add to runspace pool
-            $runspaceParams = @{'machineId'="$machineId";'OauthToken'=$OauthToken}
+            $runspaceParams = @{'machineId'="$machineId";'OauthToken'=$Script:anchorOauthToken}
             $runspace = [PowerShell]::Create()
             $null = $runspace.AddScript($scriptblock)
             $null = $runspace.AddParameters($runspaceParams)
@@ -551,9 +614,10 @@ Function Get-AnchorData {
     param(
         [Parameter(Mandatory,Position=0)]$OauthToken,
         [Parameter(Mandatory,Position=1)][string]$ApiEndpoint, 
-        [Parameter(Position=2)]$ApiQuery
+        [Parameter(Position=2)]$ApiQuery,
+        [Parameter(Position=3)][switch]$NoRefreshToken
     )
-    Validate-AnchorOauthToken -OauthToken $OauthToken #Check to make sure the Oauth token is valid and refresh if needed.
+    Validate-AnchorOauthToken -OauthToken $OauthToken -NoRefresh $NoRefreshToken #Check to make sure the Oauth token is valid and refresh if needed.
     
     $tokenType = $OauthToken.token_type
     $accessToken = $OauthToken.access_token
@@ -584,89 +648,31 @@ Function Get-AnchorData {
 
 #region DEPRECATED FUNCTIONS
 
-# Accepts an OrgId as a string.
-# Returns an AnchorOrg Object.
-Function Get-AnchorOrgById {
-    param(
-        [string]$OrgId,
-        $OauthToken
-    )
-    $apiEndpoint = "organization/$OrgId"
-    $results = Get-AnchorData -ApiEndpoint $apiEndPoint -OauthToken $OauthToken
-    Return $results
-}
-
-# This function is supurfluous as it can be accomplished by calling Get-AnchorOrgRoots and piping the results to Wehre-Object
-Function Get-AnchorOrgBackupRoots {
-    param(
-        [string]$OrgId, 
-        [int]$PageOffset, 
-        $OauthToken
-    )
-    Validate-AnchorOauthToken -OauthToken $OauthToken
-    $tokenType = $OauthToken.token_type
-    $accessToken = $OauthToken.access_token
-    $headers = @{'Authorization' = "$tokenType $accessToken"}
-    If(-not $PageOffset){$PageOffset=0}
-    $body = @{'offset' = "$PageOffset"}
-    $results = Invoke-RestMethod -Uri "$apiUri`/organization/$OrgId/roots" -Method Get -Headers $headers -Body $body
-    $return = $results.results | Where-Object {$_.root_type -eq "backup"}
-    Return $return
-}
-
-Function Get-AnchorDataOld {
-    param(
-        [Parameter(Mandatory,Position=0)]$OauthToken,
-        [Parameter(Mandatory,Position=1)][string]$ApiEndpoint, 
-        [Parameter(Position=2)]$ApiQuery
-    )
-    Validate-AnchorOauthToken -OauthToken $OauthToken #Check to make sure the Oauth token is valid and refresh if needed.
-    
-    $tokenType = $OauthToken.token_type
-    $accessToken = $OauthToken.access_token
-    $headers = @{'Authorization' = "$tokenType $accessToken"}
-    $body = $ApiQuery
-    
-    $results = Invoke-RestMethod -Uri "$apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $body
-    # Write-Host ($results | out-string)
-    
-    If ($results.PSobject.Properties.name -eq "results") { # The returned object contains a property named "results" and is therefore a collection. We have to do some magic to extract all the data. 
-        #Write-Host "Collection"
-        $collection = $results.results
-        $totalResults = $results.total #The call will only return 100 objects at a time. This tells us if there are more to get.
-        $body+=@{'offset' = '0'} #Because we're going to need to increment the offset, and we didn't have an offset as part of the query to begin, we have to add a zero-value offset before we can increment it.
-        While ($totalResults -gt $collection.Count){ # Keep calling the endpoint until we've squeezed out all the data.
-            $PageOffset+=100 #We want to get the next 100 results
-            $body.offset = "$PageOffset" # Update the offset value for the next Api call.
-            $results = Invoke-RestMethod -Uri "$apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $body
-            $collection += $results.results # Extract the objects from the results and add them to the collection that will be returned.
-            $totalResults = $results.total
-        }
-        $return = $collection
-
-    } Else { #This is an object. We can just return the results.
-        #Write-Host "Object"
-        $return = $results
-    }
-    Return $return
-}
-
-Function Get-AnchorMachineBackupsOld {
+Function Get-AnchorRootLastModifiedOld {
     [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor machine id')][string[]]$id, 
-        [Parameter(Mandatory,Position=0)]$OauthToken
+        [Parameter(Mandatory,Position=0)]$OauthToken,
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor root id')][string[]]$id
     )
     process{
-        foreach ($machineId in $id){
-            $apiEndpoint = "machine/$machineId/backups"
-            Write-Progress -Activity "Looking for machine backups" -CurrentOperation $machineId
-            $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndPoint
-            # the machine backups endpoint may not always have results.
-            #   Therefore, we need to do some extra work.
-            If ($results){
-                $results
-            }
+        foreach ($rootId in $id){
+            $lookBackDays = -1 #Initialize
+            $Since = (Get-Date).AddDays($lookBackDays) #Initialize
+            Do{
+                Write-Progress -Id $rootID -Activity "Analyzing root $rootID" -Status "LookBackDays = $lookBackDays"
+                $apiEndpoint = "files/$rootId/modified_since"
+                $apiQuery = @{'since' = "$(Get-Date($Since) -Format 'yyyy-MM-ddThh:mm:ss')"}
+                try {
+                    $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+                } catch {
+                    $results = [PSCustomObject]@{'root_id' = "$rootId";'modified'='api_error'}
+                }
+                $results | Sort-Object -Property modified -Descending | Select-Object root_id, modified -First 1 | Add-Member -MemberType AliasProperty -Name id -Value root_id -PassThru | Select-Object id, modified
+                $lookBackDays = $lookBackDays * 2
+                $Since = (Get-Date).AddDays($lookBackDays)
+            }Until($results -or ($lookBackDays -lt -2048) -or $halt) # Let's not get carried away. 5.6 years ought to be enough! Also, remember, we're counting backward.
+            If ($lookBackDays -lt -2555){[PSCustomObject]@{'id' = "$rootId";'modified'='no_files_found'}}
+            Write-Progress -Id $RootID -Activity "Analyzing root $RootID" -Completed
         }
     }
 }
