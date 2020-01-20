@@ -395,6 +395,69 @@ Function Get-AnchorRootFilesModifiedSince {
 # We do multiple checks, looking back 1 day, 2 days, 4 days, and so on until 2048.
 #   The API times out if there's no result in about 5 minutes, so this can potentially take a long time, especially if there are roots with large numbers of files.
 Function Get-AnchorRootLastModified {
+<#
+    .SYNOPSIS
+    Returns the last time any file in a root was modified.
+
+    .DESCRIPTION
+    Returns the last time any file in a root was modified.
+    Accepts a collection of AnchorRoot objects from the pipeline or a number of AnchorRootId strings in the arguments.
+    
+    .NOTES
+    If no files are found that have been modified in the last 5.6 years, the .modified value returned will be 'no_files_found'.
+    If there is an error while calling the API, including a timeout, the .modified value returned will be 'api_error'.
+    (As of at least 2020-01-19) there seems to be a discrepency between the 'since' date in the API call, and the 'modified' property of the files, as you can receive files with 'modified' dates prior to the 'since' date.
+
+    .PARAMETER id
+    AnchorRoot id number. Can accept an array of id numbers.
+
+    .PARAMETER MaxThreads
+    The modified_since API call can be time-consuming for roots with many files. When checking multiple roots, each root is devoted its own PowerShell runspace. This parameter controls how many runspaces are allowed to exist at a time. Default is 100.
+
+    .INPUTS
+    AnchorRoot object, containing at least the .id property.
+
+    .OUTPUTS
+    A collection of objects listing the root ID and the last time a file was modified in that root.
+
+    .EXAMPLE
+    C:\PS> Get-AnchorRootLastModified -id 123456
+        id modified           
+        -- --------           
+    123456 2020-01-20T11:30:01
+
+    .EXAMPLE
+    C:\PS> Get-AnchorRootLastModified -id 123456, 123457
+        id modified           
+        -- --------           
+    123456 2020-01-20T11:30:01
+    123457 2020-01-20T04:05:03
+
+    .EXAMPLE
+    C:\PS> Get-AnchorRootFilesModifiedSince -id $myIdArray
+        id modified           
+        -- --------           
+    487079 2020-01-20T11:30:01
+    488087 2020-01-20T04:05:03
+    488699 2004-09-17T16:45:20
+    (...)
+
+    .EXAMPLE
+    C:\PS> $myAnchorRoots | Get-AnchorRootLastModified
+        id modified           
+        -- --------           
+    487079 2020-01-20T11:30:01
+    488087 2020-01-20T04:05:03
+    488699 2004-09-17T16:45:20
+    (...)
+
+    .LINK
+    API reference: http://developer.anchorworks.com/v2/#list-recently-modified-files
+
+    .LINK
+    Get-AnchorOauthToken
+#>
+
     [CmdletBinding()]
     param(
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor root id')][string[]]$id,
@@ -461,6 +524,7 @@ Function Get-AnchorRootLastModified {
                     $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery -NoRefreshToken #Adding NoRefreshToken, because it doesn't work within a runspace.
                 } catch {
                     [PSCustomObject]@{'id' = "$rootId";'modified'='api_error'}
+                    $halt = $true
                 }
                 $results | Sort-Object -Property modified -Descending | Select-Object root_id, modified -First 1 | Add-Member -MemberType AliasProperty -Name id -Value root_id -PassThru | Select-Object id, modified
                 $lookBackDays = $lookBackDays * 2
