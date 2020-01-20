@@ -19,8 +19,22 @@ Function Populate-UsefulVariables{
     Write-Host $script:anchorCustomerOrgs.Count "customer orgs retrieved."
 
     Write-Host "Getting collection of AnchorMachine objects for the parent org..."
+    # Note that the parent org owns all child org machines, so this includes all machines.
     $script:anchorMachines = $anchorParentOrg | Get-AnchorOrgMachines
     Write-Host $script:anchorMachines.Count "machines retrieved."
+
+    Write-Host "Getting collection of AnchorMachine objects for the customer orgs..."
+    # Note that the parent org owns all child org machines, so this includes all machines.
+    $script:anchorCustomerMachines = $anchorCustomerOrgs | Get-AnchorOrgMachines
+    Write-Host $script:anchorCustomerMachines.Count "machines retrieved."
+
+    Write-Host "Calculating collection of AnchorMachine objects explicitly in the parent org..."
+    $Script:anchorParentMachines = $anchorParentOrg | Get-AnchorOrgMachines -ExcludeChildren
+    Write-Host $script:anchorParentMachines.Count "machines calculated."
+
+    Write-Host "Creating collection of all AnchorMachine objects with their correct organization_id..."
+    $Script:anchorOrgMachines = $Script:anchorParentMachines + $Script:anchorCustomerMachines
+    Write-Host $script:anchorOrgMachines.Count "machines in total. (This should match the number of machines retrieved from the parent org.)"
     
     Write-Host "Getting collection of AnchorRoot objects for the parent org..."
     $script:anchorRoots = $anchorParentOrg | Get-AnchorOrgRoots
@@ -40,12 +54,31 @@ Function Get-AllBackups {
     Write-Host "$secondsPerMachine seconds per machine."
 }
 
-# Displays a all machine backup root id's and the last time anything in them was modified.
+# Get a list of all machine backup root id's and the last time anything in them was modified.
 # Go make a sandwich while you wait for this to complete.
-Function Report-BackupsLastModified {
-    $duration = Measure-Command{$anchorBackups | Get-AnchorRootLastModified | Out-Default}
+Function Get-BackupsLastModified {
+    Write-Host "Getting last_modified date for machine backups."
+    $duration = Measure-Command{$script:anchorBackupsLastModified = $anchorBackups | Get-AnchorRootLastModified}
     $secondsPerBackup = $duration.TotalSeconds / $anchorBackups.Count
     Write-Host $anchorBackups.Count "backup roots processed."
     Write-Host "$($duration.TotalSeconds) seconds duration."
     Write-Host "$secondsPerBackup seconds per backup root."
+}
+
+Function Report-MachineBackups{
+    Populate-UsefulVariables
+    Get-AllBackups
+    Get-BackupsLastModified
+    $anchorMachines | ? machine_type -ne mobile | ForEach-Object {
+        $machineId = $_.id
+        $machineName = $_.dns_name
+        $myBackups = $anchorBackups | ? {$_.machine_id -eq $machineId}
+        $myBackups | ForEach-Object {
+            $rootId = $_.id
+            $myLastModified = ($Script:anchorBackupsLastModified | ? {$_.id -eq $rootId}).modified
+            If($myLastModified){
+                $_ | Select @{'N'='machine_name';'E'={"$machineName"}}, path, @{'N'='last_modified';'E'={"$myLastModified"}}
+            }
+        }
+    }
 }

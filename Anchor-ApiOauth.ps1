@@ -99,6 +99,7 @@ param($OauthToken)
     $status = "Valid"
     If(-not $OauthToken){$status = "No Token Provided"}
     If((Get-Date) -gt $OauthToken.refresh_after){$status = "Refresh Required"}
+    If((Get-Date) -gt $OauthToken.expires_on){$status = "Token Expired"}
     Return $status
 }
 
@@ -112,11 +113,18 @@ Function Validate-AnchorOauthToken {
     #Write-Host $OauthToken.refresh_token
     $tokenStatus = Get-AnchorOauthStatus $OauthToken
     Switch ($tokenStatus){
-        "No Token Provided" {Write-Host "Warning. No token provided."}
+        "No Token Provided" {
+            Write-Host "Not authenticated." -ForegroundColor Red -BackgroundColor Black
+            Get-AnchorOauthToken
+        }
         "Refresh Required" {
             If(!$NoRefresh){
                 Refresh-AnchorOauthToken $OauthToken
             }
+        }
+        "Token Expired" {
+            Write-Host "Token Expired. Must Reauthenticate" -ForegroundColor Yellow -BackgroundColor Black
+            Get-AnchorOauthToken            
         }
     }
     If ($ForceRefresh){Refresh-AnchorOauthToken $OauthToken}

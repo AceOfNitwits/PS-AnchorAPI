@@ -187,21 +187,145 @@ Function Get-AnchorOrg {
     }
 }
 
-# Accepts an AnchorOrg object or collection of AnchorOrg objects.
-# Returns AnchorMachine objects.
 Function Get-AnchorOrgMachines {
+<#
+    .SYNOPSIS
+    Returns AnchorMachine objects for a given AnchorOrganization.
+
+    .DESCRIPTION
+    Accepts a collection of AnchorOrganization objects from the pipeline or a number of AnchorOrganization id strings in the arguments.
+    Returns a collection of AnchorMachine objects.
+    
+    .NOTES
+    The owning organization_id is not returned in the API call, so we add it from the supplied value.
+    Also, the API call returns all machines from the organization and all child organizations.
+    Therefore, the organization_id does not always represent the owning organization of a particular machine.
+    Use the -ExcludeChildren property to return machines that are not from child organizations.
+
+    .PARAMETER id
+    AnchorOrganization id number. Can accept an array of id numbers.
+
+    .PARAMETER ExcludeChildren
+    Do not return machines from child organizations.
+    (This functionality is not part of the API. In order to achieve this, we have to make an additional API call to get the children of the given organization, then an API call for each child to get the machines. We then select only the machines that do not appear in the list of child organization machines.)
+
+    .INPUTS
+    AnchorOrganization object, containing at least the .id property.
+
+    .OUTPUTS
+    A collection of AnchorMachine objects.
+
+    .EXAMPLE
+    C:\PS> Get-AnchorOrgMachines -id 123456
+    agent_version                : 2.7.1.1550
+    bandwidth_throttle           : 
+    created                      : 2019-12-26T15:08:29
+    dns_name                     : PC001
+    guid                         : c5b26ffc-xxxx-40da-b4d9-a76b636816e0
+    health_report_period_minutes : 
+    id                           : 132465
+    last_disconnect              : 
+    last_login                   : 2020-01-20T10:57:44
+    locked                       : False
+    machine_type                 : server
+    manual_collisions            : False
+    nickname                     : 
+    os_type                      : win
+    os_version                   : Windows Server 2016
+    throttle_exception_days      : 
+    throttle_exception_dow       : 
+    throttle_exception_end       : 
+    throttle_exception_start     : 
+    throttle_exception_throttle  : 
+    throttled                    : False
+    type                         : machine
+    organization_id              : 123456
+
+    .EXAMPLE
+    C:\PS> Get-AnchorOrgMachines -id 123456, 123457 -ExcludeChildren
+    agent_version                : 2.7.1.1550
+    bandwidth_throttle           : 
+    created                      : 2019-12-26T15:08:29
+    dns_name                     : PC001
+    guid                         : c5b26ffc-xxxx-40da-b4d9-a76b636816e0
+    health_report_period_minutes : 
+    id                           : 132465
+    last_disconnect              : 
+    last_login                   : 2020-01-20T10:57:44
+    locked                       : False
+    machine_type                 : server
+    manual_collisions            : False
+    nickname                     : 
+    os_type                      : win
+    os_version                   : Windows Server 2016
+    throttle_exception_days      : 
+    throttle_exception_dow       : 
+    throttle_exception_end       : 
+    throttle_exception_start     : 
+    throttle_exception_throttle  : 
+    throttled                    : False
+    type                         : machine
+    organization_id              : 123456
+    (...)
+
+    .EXAMPLE
+    C:\PS> $anchorOrganizations | Get-AnchorOrgMachines -ExcludeChildren
+    agent_version                : 2.7.1.1550
+    bandwidth_throttle           : 
+    created                      : 2019-12-26T15:08:29
+    dns_name                     : PC001
+    guid                         : c5b26ffc-xxxx-40da-b4d9-a76b636816e0
+    health_report_period_minutes : 
+    id                           : 132465
+    last_disconnect              : 
+    last_login                   : 2020-01-20T10:57:44
+    locked                       : False
+    machine_type                 : server
+    manual_collisions            : False
+    nickname                     : 
+    os_type                      : win
+    os_version                   : Windows Server 2016
+    throttle_exception_days      : 
+    throttle_exception_dow       : 
+    throttle_exception_end       : 
+    throttle_exception_start     : 
+    throttle_exception_throttle  : 
+    throttled                    : False
+    type                         : machine
+    organization_id              : 123456
+    (...)
+
+    .LINK
+    API reference: http://developer.anchorworks.com/v2/#machine-methods
+
+    .LINK
+    Get-AnchorOauthToken
+#>
     [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory=$true,Position=0,HelpMessage='Organization ID')][string[]]$id
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory=$true,Position=0,HelpMessage='Organization ID')][string[]]$id,
+        [Parameter(Position=1,HelpMessage='Only return machines explicitly in this organization.')][switch]$ExcludeChildren
     )
     process{
         #We might get multiple $id values from the parameter.
         ForEach ($orgId in $id){
             $apiEndpoint = "organization/$($orgId)/machines"
-            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            $myMachines = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            If($ExcludeChildren){
+                $childOrgs = Get-AnchorOrgChildren -id $orgId
+                If($childOrgs){
+                    $childOrgMachines = $childOrgs | Get-AnchorOrgMachines
+                    $exclusiveMachines = Compare-Object $myMachines $childOrgMachines -Property id -PassThru | Where-Object SideIndicator -eq "<="
+                    $results = $exclusiveMachines
+                } else { # This org has no children, so we can just return the original list.
+                    $results = $myMachines
+                }
+            } else {
+                $results = $myMachines
+            }
             # If there are no results, we don't want to return an empty object with just the organization property populated.
             If($results){
-                $results | Select-Object *, @{N='organization';E={@{'id'="$orgId"}}} #, @{N='org_name';E={$orgName}}
+                $results | Select-Object *, @{N='organization_id';E={"$orgId"}} #, @{N='org_name';E={$orgName}}
             }
         }
     }
