@@ -14,12 +14,153 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 # To-do 
 
-⬜ Finish populating management functions
+## Finish populating management functions
 
-⬜ Finish populating reporting functions
+⬜ Rename a file
 
-⬜ More examples. 
+⬜ Move a file
 
-✔ Convert to a module
+⬜ Lock a file
 
-⬜ Improve authentication logic to only prompt for TOTP when it's actually needed. 
+⬜ Unlock a file
+
+⬜ Delete a file
+
+⬜ Upload a file to a folder
+
+⬜ Create a subfolder
+
+⬜ Download a folder
+
+⬜ Share a folder
+
+⬜ Rename a folder
+
+⬜ Move a folder
+
+⬜ Lock a folder
+
+⬜ Unlock a folder
+
+⬜ Delete a folder
+
+⬜ Upload a file to a root
+
+⬜ Create a folder in a root
+
+⬜ Lock a root
+
+⬜ Unlock a root
+
+⬜ Create an organization
+
+⬜ Update an organization
+
+⬜ Disable an organization
+
+⬜ Enable an organization
+
+⬜ Delete an organization
+
+⬜ Update an organization's policy
+
+⬜ Create a share
+
+⬜ Update a share
+
+⬜ Update share subscribers
+
+⬜ Delete a share
+
+⬜ Create a person
+
+⬜ Update a person
+
+⬜ Delete a person
+
+⬜ Create an account sync root
+
+⬜ Create a guest
+
+⬜ Update a guest
+
+⬜ Delete a guest
+
+⬜ Convert a guest to a standard account
+
+⬜ Create a group
+
+⬜ Update a group
+
+⬜ Update group members
+
+⬜ Delete a group
+
+⬜ Enable file server on a machine
+
+⬜ Disable file server on a machine
+
+⬜ Map a path on a file server enabled machine to a root
+
+⬜ Delete a machine mapping
+
+⬜ Restore a backup
+
+⬜ Delete a backup
+
+⬜ Create an activity record
+
+## Finish populating reporting functions
+
+⬜ Search files and folders
+
+⬜ Get a root (by organization)
+
+⬜ List an organization's shares
+
+⬜ Get a share
+
+⬜ List share subscribers
+
+⬜ List an organization's users
+
+⬜ List an organization's guests
+
+⬜ List an organization's groups
+
+⬜ List an organization's authentication sources
+
+⬜ List recent activity for an organization
+
+⬜ Get usage for an organization
+
+⬜ List recent activity for a person
+
+⬜ Get a guest
+
+⬜ Get files and folders shared with a guest
+
+⬜ Get a group
+
+⬜ Get a grip
+
+⬜ List group members
+
+⬜ Get a machine's status
+
+⬜ List files on a file server enabled machine
+
+⬜ List mapped paths on a file server enabled machine
+
+⬜ Get a machine mapping
+
+⬜ Get a list of activity types
+
+⬜ Get an activity record
+
+
+## ⬜ More examples. 
+
+## ✔ Convert to a module
+
+## ⬜ Improve authentication logic to only prompt for TOTP when it's actually needed. 
