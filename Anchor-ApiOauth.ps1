@@ -5,12 +5,20 @@
 
 $oauthUri = "https://clocktowertech.syncedtool.com/oauth/token"
 
-Function Get-AnchorOauthToken{
+Function Authenticate-AnchorAccount{
+    param(
+        [Parameter(Position=0)][string]$Username, 
+        [Parameter(Position=1)][string]$Password
+    )
+    $Script:anchorOauthToken = New-AnchorOauthToken -Username $Username -Password $Password
+}
+
+Function New-AnchorOauthToken{
 <#
     .LINK
     http://developer.anchorworks.com/oauth2/#request-an-access-token
 #>
-param($Username, $Password)
+param([string]$Username, [string]$Password)
     $grantType = "password"
     $clientId = "anchor"
     Do {
@@ -52,14 +60,27 @@ param($Username, $Password)
         $refreshWindow = $oauthToken.expires_in
         [datetime]$oauthExpiry = (Get-Date).AddSeconds($refreshWindow)
         [datetime]$oauthRefresh = (Get-Date).AddSeconds($refreshWindow / 2)
-        $Script:anchorOauthToken = $oauthToken | Select-Object *, @{N='expires_on';E={$oauthExpiry}}, @{N='refresh_after';E={$oauthRefresh}}
+        $oauthToken | Select-Object *, @{N='expires_on';E={$oauthExpiry}}, @{N='refresh_after';E={$oauthRefresh}}
 
-        Write-Host "Oauth token obtained. New token will expire on $($Script:anchorOauthToken.expires_on)`." -BackgroundColor Black -ForegroundColor Green
+        Write-Host "Oauth token obtained. New token will expire on $($oauthExpiry)`." -BackgroundColor Black -ForegroundColor Green
     }
     Else {
         Write-Host "Oauth token not obtained!" -BackgroundColor Black -ForegroundColor Red
     }
-    #Return $newToken
+    #$Script:anchorOauthToken
+}
+
+Function Get-AnchorAuthStatus{
+    If($Script:anchorOauthToken){
+        $expiryTimespan = New-TimeSpan -Start (Get-Date) -End $Script:anchorOauthToken.expires_on
+        Switch ($expiryTimespan -gt 0)  {
+            $True {[pscustomobject]@{'auth_status'='valid';'expires_on'=($Script:anchorOauthToken.expires_on)}}
+            $False {[pscustomobject]@{'auth_status'='false';'expires_on'=($Script:anchorOauthToken.expires_on)}}
+        }
+    }
+    Else{
+        [pscustomobject]@{'auth_status'='not_authenticated';'expires_on'=$null}
+    }
 }
 
 Function Refresh-AnchorOauthToken{
@@ -97,36 +118,38 @@ param($CurrentToken)
 Function Get-AnchorOauthStatus {
 param($OauthToken)
     $status = "Valid"
-    If(-not $OauthToken){$status = "No Token Provided"}
-    If((Get-Date) -gt $OauthToken.refresh_after){$status = "Refresh Required"}
-    If((Get-Date) -gt $OauthToken.expires_on){$status = "Token Expired"}
-    Return $status
+    If(-not $OauthToken){$status = "empty_token"}
+    ElseIf((Get-Date) -gt $OauthToken.expires_on){$status = "token_expired"}
+    ElseIf((Get-Date) -gt $OauthToken.refresh_after){$status = "refresh_required"}
+    $status
 }
 
 
 Function Validate-AnchorOauthToken {
     param(
-        $OauthToken, 
+        [AllowNull()][object]$OauthToken, 
         [switch]$ForceRefresh,
         [switch]$NoRefresh
     )
     #Write-Host $OauthToken.refresh_token
     $tokenStatus = Get-AnchorOauthStatus $OauthToken
     Switch ($tokenStatus){
-        "No Token Provided" {
+        "empty_token" {
             Write-Host "Not authenticated." -ForegroundColor Red -BackgroundColor Black
-            Get-AnchorOauthToken
+            Authenticate-AnchorAccount
+            #$OauthToken = New-AnchorOauthToken
+            #$OauthToken
         }
-        "Refresh Required" {
+        "refresh_required" {
             If(!$NoRefresh){
                 Refresh-AnchorOauthToken $OauthToken
             }
         }
-        "Token Expired" {
+        "token_expired" {
             Write-Host "Token Expired. Must Reauthenticate" -ForegroundColor Yellow -BackgroundColor Black
-            Get-AnchorOauthToken            
+            Authenticate-AnchorAccount
+            #$OauthToken = New-AnchorOauthToken            
         }
     }
     If ($ForceRefresh){Refresh-AnchorOauthToken $OauthToken}
-    #Return $OauthToken
 }

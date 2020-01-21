@@ -7,10 +7,6 @@
 
 #endregion
 
-# Base API URI
-[string]$global:apiUri = "https://clocktowertech.syncedtool.com/api/2"
-
-
 Function Get-AnchorApiVersion {
 <#
     .SYNOPSIS
@@ -47,6 +43,135 @@ Function Get-AnchorApiVersion {
     $apiEndpoint = "version"
     $results = Get-AnchorData -ApiEndpoint $apiEndPoint -OauthToken $Script:anchorOauthToken
     $results
+}
+
+Function Get-AnchorFolderMetadata {
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Root ID')][string[]]$root_id, 
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor File ID')][string[]]$id, 
+        [Parameter(HelpMessage='Include collection of permissions for current user')][switch]$IncludeChildren,
+        [Parameter(HelpMessage='Include collection of permissions for current user')][switch]$IncludeDeleted,
+        [Parameter(HelpMessage='Include collection of permissions for current user')][switch]$IncludeLockInfo,
+        [Parameter(HelpMessage='Include collection of permissions for current user')][switch]$IncludePermissions,
+        [Parameter()][string]$Hash
+
+    )
+    begin{
+        $apiQuery = @{
+            'include_children' = "$(If($IncludeChildren){"true"}Else{"false"})"
+            'include_deleted' = "$(If($IncludeDeleted){"true"}Else{"false"})"
+            'include_lock_info' = "$(If($IncludeLockInfo){"true"}Else{"false"})"
+            'include_permissions' = "$(If($IncludePermissions){"true"}Else{"false"})"
+            'hash' = "$hash"
+        }
+    }
+    process{
+        $rootId = $root_id
+        $folderId = $id
+        $apiEndpoint = "files/$rootId/folder/$folderId"
+        try{
+            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+        }
+        catch{
+            Switch -regex ($Error[0].Exception){
+                default {Write-Host $error[0].Exception}
+            }
+        }
+        $results
+    }
+}
+
+
+Function Get-AnchorFileMetadata {
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Root ID')][string[]]$root_id, 
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor File ID')][string[]]$id, 
+        [Parameter(HelpMessage='Include collection of permissions for current user')][switch]$IncludePermissions
+    )
+    begin{
+        $apiQuery = @{
+            'include_permissions' = "$(If($IncludePermissions){"true"}Else{"false"})"
+        }
+    }
+    process{
+        $rootId = $root_id
+        $fileId = $id
+        $apiEndpoint = "files/$rootId/$fileId"
+        try{
+            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+        }
+        catch{
+            Switch -regex ($Error[0].Exception){
+                default {Write-Host $error[0].Exception}
+            }
+        }
+        $results
+    }
+}
+
+Function Get-AnchorPerson {
+<#
+    .SYNOPSIS
+    Returns a collection of AnchorPerson objects for a given AnchorPerson id or set of id's or a given email address or set of email addresses.
+
+    .DESCRIPTION
+    Returns a collection of AnchorPerson objects.
+    Accepts one or more AnchorPerson id's via argument or a colleciton of AnchorPerson objects from the pipeline.
+    Accepts one or more email addresses via argument or a colleciton of AnchorPerson objects from the pipeline.
+
+    .NOTES
+    
+    .PARAMETER id
+    One or more AnchorPerson id's.
+
+    .PARAMETER Me
+    Switch to return the AnchorPerson object for the authenticated user.
+
+    .PARAMETER ByEmail
+    Changes the functionality of the function to accept email address instead of id.
+
+    .INPUTS
+    A collection of AnchorPerson objects
+
+    .OUTPUTS
+    A collection of AnchorPerson objects
+
+
+    .LINK
+    http://developer.anchorworks.com/v2/#get-a-person
+
+    .LINK
+    Get-AnchorOauthToken
+#>
+    [CmdletBinding()]
+    [Alias('AnchorPerson')]
+    param(
+        [Parameter(ParameterSetName='ById',Position=0,ValueFromPipelineByPropertyName)][string[]]$id,
+        [Parameter(ParameterSetName='ByEmail',Position=0,ValueFromPipelineByPropertyName)][string[]]$email,
+        [Parameter(ParameterSetName='ByEmail',Position=1,HelpMessage='Accept email address instead of person id.')][switch]$ByEmail,
+        [Parameter(ParameterSetName='Me',Position=0,HelpMessage='Return the person object for the authenticated user.')][switch]$Me
+    )
+    process{
+        # This endpoint can be called wihout an id to get the data for the currently logged-on person.
+        If($Me){
+            $apiEndpoint = "person"
+            Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+        }
+        # We might have multiple $id values passed via a function parameter . . . and that's okay.
+        If($ByEmail){
+            ForEach ($emailAddr in $email){
+                $apiEndpoint = "person/$emailAddr"
+                Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            }
+        } Else {
+            ForEach ($personId in $id){
+                $apiEndpoint = "person/$personId"
+                Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            }
+        }
+    }
 }
 
 
@@ -173,10 +298,15 @@ Function Get-AnchorOrg {
     [CmdletBinding()]
     [Alias('AnchorOrg')]
     param(
-        #[Parameter(Mandatory=$true,Position=0)]$OauthToken,
-        [Parameter(Mandatory=$true,Position=0,ValueFromPipelineByPropertyName)][string[]]$id
-        
+        [Parameter(ParameterSetName='Standard',Mandatory=$true,Position=0,ValueFromPipelineByPropertyName)][string[]]$id,
+        [Parameter(ParameterSetName='FindTop',Mandatory=$true,Position=0,HelpMessage='Get the top-level organization for this user.')][switch]$Top
     )
+    begin{
+        If($Top){
+            $anchorUser = Get-AnchorPerson -Me
+            $id = $anchorUser.company_id
+        }
+    }
     process{
         # We might have multiple $id values passed via a function parameter . . . and that's okay.
         ForEach ($orgId in $id){
@@ -585,7 +715,7 @@ Function Get-AnchorRootLastModified {
     [CmdletBinding()]
     param(
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor root id')][string[]]$id,
-        [Parameter(Position=1,HelpMessage='Number of threads to use when querying multiple roots. Default = 100')][int]$MaxThreads=100
+        [Parameter(Position=1,HelpMessage='Number of threads to use when querying multiple roots. Default = number of processors + 1')][int]$MaxThreads = $env:NUMBER_OF_PROCESSORS + 1
     )
     begin{
         #region BLOCK 1: Create and open runspace pool, setup runspaces array with min and max threads
@@ -800,7 +930,7 @@ Function Get-AnchorMachineBackups {
 # The OauthToken is an object, returned from the Oauth function.
 Function Get-AnchorData {
     param(
-        [Parameter(Mandatory,Position=0)]$OauthToken,
+        [Parameter(Mandatory,Position=0)][AllowNull()][object]$OauthToken,
         [Parameter(Mandatory,Position=1)][string]$ApiEndpoint, 
         [Parameter(Position=2)]$ApiQuery,
         [Parameter(Position=3)][switch]$NoRefreshToken
@@ -812,7 +942,7 @@ Function Get-AnchorData {
     $headers = @{'Authorization' = "$tokenType $accessToken"}
     $body = $ApiQuery
 
-    $results = Invoke-RestMethod -Uri "$apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $body
+    $results = Invoke-RestMethod -Uri "$Global:apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $body
     
     If ($results.PSobject.Properties.name -eq "results") { # The returned object contains a property named "results" and is therefore a collection. We have to do some magic to extract all the data. 
         #Write-Host "Collection"
@@ -836,34 +966,6 @@ Function Get-AnchorData {
 
 #region DEPRECATED FUNCTIONS
 
-Function Get-AnchorRootLastModifiedOld {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory,Position=0)]$OauthToken,
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor root id')][string[]]$id
-    )
-    process{
-        foreach ($rootId in $id){
-            $lookBackDays = -1 #Initialize
-            $Since = (Get-Date).AddDays($lookBackDays) #Initialize
-            Do{
-                Write-Progress -Id $rootID -Activity "Analyzing root $rootID" -Status "LookBackDays = $lookBackDays"
-                $apiEndpoint = "files/$rootId/modified_since"
-                $apiQuery = @{'since' = "$(Get-Date($Since) -Format 'yyyy-MM-ddThh:mm:ss')"}
-                try {
-                    $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
-                } catch {
-                    $results = [PSCustomObject]@{'root_id' = "$rootId";'modified'='api_error'}
-                }
-                $results | Sort-Object -Property modified -Descending | Select-Object root_id, modified -First 1 | Add-Member -MemberType AliasProperty -Name id -Value root_id -PassThru | Select-Object id, modified
-                $lookBackDays = $lookBackDays * 2
-                $Since = (Get-Date).AddDays($lookBackDays)
-            }Until($results -or ($lookBackDays -lt -2048) -or $halt) # Let's not get carried away. 5.6 years ought to be enough! Also, remember, we're counting backward.
-            If ($lookBackDays -lt -2555){[PSCustomObject]@{'id' = "$rootId";'modified'='no_files_found'}}
-            Write-Progress -Id $RootID -Activity "Analyzing root $RootID" -Completed
-        }
-    }
-}
 
 
 #endregion
