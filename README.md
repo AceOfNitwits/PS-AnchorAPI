@@ -112,15 +112,7 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ## Finish populating reporting functions
 
-✔ Search files and folders
-
-✔ List an organization's shares
-
-✔ Get a share
-
-✔ List share subscribers
-
-⬜ List an organization's users
+✔ List an organization's users
 
 ⬜ List an organization's guests
 
