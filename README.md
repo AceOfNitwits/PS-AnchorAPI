@@ -116,7 +116,7 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✔ List an organization's shares
 
-⬜ Get a share
+✔ Get a share
 
 ⬜ List share subscribers
 
