@@ -18,12 +18,16 @@
         'Get-AnchorOrgMachines',
         'Get-AnchorOrgChildren',
         'Get-AnchorOrgRoots',
+        'Get-AnchorOrgShare',
+        'Get-AnchorOrgShares',
+        'Get-AnchorOrgShareSubscribers',
         'Get-AnchorRootMetadata',
         'Get-AnchorRootFilesModifiedSince',
         'Get-AnchorRootLastModified',
         'Get-AnchorMachineBackups',
         'Download-AnchorFile',
-        'New-AnchorFileShare'
+        'New-AnchorFileShare',
+        'Find-RootFilesAndFolders'
     )
     CmdletsToExport = @()
     AliasesToExport = @()

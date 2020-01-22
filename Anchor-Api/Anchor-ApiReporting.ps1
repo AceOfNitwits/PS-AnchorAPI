@@ -494,6 +494,66 @@ Function Get-AnchorOrgRoots {
     }
 }
 
+Function Get-AnchorOrgShares {
+# http://developer.anchorworks.com/v2/#list-an-organization's-shares
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
+        
+    )
+    process{
+        foreach ($orgId in $id){
+            $apiEndpoint = "organization/$OrgId/shares"
+            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+            $results
+        }
+    }
+}
+
+Function Get-AnchorOrgShare {
+# http://developer.anchorworks.com/v2/#get-a-share
+# This doesn't seem to return anything different than Get-AnchorRootMetadata -IncludeLockInfo.
+#   The major difference is it requires two parameters, making it harder to use, and it returns an error if the root specified is not a share.
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$company_id,
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor Root ID')][string[]]$id
+        
+    )
+    process{
+        $orgId = $company_id
+        $rootId = $id
+        $apiEndpoint = "organization/$orgId/share/$rootId"
+        $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+        $results
+    }
+}
+
+Function Get-AnchorOrgShareSubscribers {
+# http://developer.anchorworks.com/v2/#list-share-subscribers
+# subscribers are returned in a three-tuple format that is not object-friendly. Need to work on converting this.
+# Accessing the elements of the tuple goes something like this: $results.group_subscribers[0][0]
+# May have to rebuild the entire object from scratch.
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$company_id,
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor Root ID')][string[]]$id,
+        [Parameter(HelpMessage="return individual subscribers from groups")][switch]$IncludeFromGroup
+    )
+    begin{
+        $apiQuery = @{
+            'include_from_group' = "$(If($IncludeFromGroup){"true"}Else{"false"})"
+        }
+    }
+    process{
+        $orgId = $company_id
+        $rootId = $id
+        $apiEndpoint = "organization/$orgId/share/$rootId/subscribers"
+        $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+        $results
+    }
+}
+
 # Note that the Include switches must be explicitly called, despite the fact that some are on by default in the API.
 Function Get-AnchorRootMetadata {
     [CmdletBinding()]
@@ -523,6 +583,34 @@ Function Get-AnchorRootMetadata {
             catch{
                 Switch -regex ($Error[0].Exception){
                     '\(304\)\sNot\sModified\.' {$results = @{'id'="$rootId";'modified'=$false}}
+                    default {Write-Host $error[0].Exception}
+                }
+            }
+            $results
+        }
+    }
+}
+
+#http://developer.anchorworks.com/v2/#search-files-and-folders
+Function Find-RootFilesAndFolders {
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Root ID')][string[]]$id, 
+        [Parameter(HelpMessage='Search term')][string]$SearchTerm
+    )
+    begin{
+        $apiQuery = @{
+            'q' = $SearchTerm
+        }
+    }
+    process{
+        foreach ($rootId in $id){
+            $apiEndpoint = "files/$rootId/search"
+            try{
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+            }
+            catch{
+                Switch -regex ($Error[0].Exception){
                     default {Write-Host $error[0].Exception}
                 }
             }
@@ -941,11 +1029,15 @@ Function Get-AnchorData {
     $accessToken = $OauthToken.access_token
     $headers = @{'Authorization' = "$tokenType $accessToken"}
     $body = $ApiQuery
-
-    $results = Invoke-RestMethod -Uri "$Global:apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $body
-    
+    #try{
+        $results = Invoke-RestMethod -Uri "$Global:apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $body
+    #}
+    #catch{
+    #    Switch ($Error[0].Exception){
+    #        default {$results = $Error[0].Exception}
+    #    }
+    #}
     If ($results.PSobject.Properties.name -eq "results") { # The returned object contains a property named "results" and is therefore a collection. We have to do some magic to extract all the data. 
-        #Write-Host "Collection"
         $results.results # Return the first set of results.
         $resultsCount = $results.results.count
         $totalResults = $results.total #The call will only return 100 objects at a time. This tells us if there are more to get.
@@ -959,7 +1051,6 @@ Function Get-AnchorData {
         }
 
     } Else { #This is an object (or empty). We can just return the results.
-        #Write-Host "Object"
         $results
     }
 }
