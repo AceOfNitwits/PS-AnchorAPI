@@ -114,7 +114,7 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✔ Search files and folders
 
-⬜ List an organization's shares
+✔ List an organization's shares
 
 ⬜ Get a share
 
