@@ -7,6 +7,31 @@
 
 #endregion
 
+Function Get-AnchorActivityTypes {
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#get-a-list-of-activity-types
+#>
+    param(
+        [Parameter(HelpMessage='Limits the number of objects to return to the next highest multiple of 100. Default:1000')][int]$RecordCountLimit
+        
+    )
+    $apiEndpoint = "activity/types"
+    try{
+        $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
+    }
+    catch{
+        $exception = $_.Exception
+        Switch ($exception.Response.StatusCode.value__){
+            403 {$results=[pscustomobject]@{exception='unauthorized'}} # No soup for you!
+            404 {$results=[pscustomobject]@{exception='nonexistent'}}
+            default {$results = $exception}
+        }
+    }
+    $results
+}
+
+
 Function Get-AnchorApiVersion {
 <#
     .SYNOPSIS
@@ -317,6 +342,79 @@ Function Get-AnchorOrg {
     }
 }
 
+Function Get-AnchorOrgActivity {
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#list-recent-activity-for-an-organization
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id,
+        [Parameter(HelpMessage='Limits the number of objects to return to the next highest multiple of 100. Default:1000')][int]$RecordCountLimit
+        
+    )
+    # The activities that will be reutrned have numeric activity types.
+    #   It might be nice to add the activity names to the resulting object.
+    #   To do this, we're ging to put all the activity id's and names into a hash table.
+    begin{
+        $activityTypes = Get-AnchorActivityTypes | Select-Object id, activity
+        $activityTypesHash = @{}
+        $activityTypes | ForEach-Object {
+            $activityTypesHash[$_.id] = $_.activity
+        }
+
+    }
+    process{
+        foreach ($orgId in $id){
+            $apiEndpoint = "organization/$OrgId/activity"
+            try{
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
+                $results = $results | Select-Object *, @{N='activity';E={$activityTypesHash[$_.activity_type_id]}}
+            }
+            catch{
+                $exception = $_.Exception
+                Switch ($exception.Response.StatusCode.value__){
+                    403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                    404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                    default {$results = $exception}
+                }
+            }
+            $results
+        }
+    }
+}
+
+
+Function Get-AnchorOrgAuthSources {
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#list-an-organization's-authentication-sources
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
+        
+    )
+    process{
+        foreach ($orgId in $id){
+            $apiEndpoint = "organization/$OrgId/auth_sources"
+            try{
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+            }
+            catch{
+                $exception = $_.Exception
+                Switch ($exception.Response.StatusCode.value__){
+                    403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                    404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                    default {$results = $exception}
+                }
+            }
+            $results
+        }
+    }
+}
+
+
 Function Get-AnchorOrgMachines {
 <#
     .SYNOPSIS
@@ -587,6 +685,65 @@ Function Get-AnchorOrgUsers {
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/persons"
+            try{
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+            }
+            catch{
+                $exception = $_.Exception
+                Switch ($exception.Response.StatusCode.value__){
+                    403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                    404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                    default {$results = $exception}
+                }
+            }
+            $results
+        }
+    }
+}
+
+
+Function Get-AnchorOrgGuests {
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#list-an-organization's-guests
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
+        
+    )
+    process{
+        foreach ($orgId in $id){
+            $apiEndpoint = "organization/$OrgId/guests"
+            try{
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+            }
+            catch{
+                $exception = $_.Exception
+                Switch ($exception.Response.StatusCode.value__){
+                    403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                    404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                    default {$results = $exception}
+                }
+            }
+            $results
+        }
+    }
+}
+
+Function Get-AnchorOrgGroups {
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#list-an-organization's-groups
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
+        
+    )
+    process{
+        foreach ($orgId in $id){
+            $apiEndpoint = "organization/$OrgId/groups"
             try{
                 $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
             }
@@ -1071,7 +1228,8 @@ Function Get-AnchorData {
         [Parameter(Mandatory,Position=0)][AllowNull()][object]$OauthToken,
         [Parameter(Mandatory,Position=1)][string]$ApiEndpoint, 
         [Parameter(Position=2)]$ApiQuery,
-        [Parameter(Position=3)][switch]$NoRefreshToken
+        [Parameter(HelpMessage='Limits the number of results returned. Will be the next highest multiple of 100.')][int]$ResultsLimit=1000,
+        [Parameter()][switch]$NoRefreshToken
     )
     Validate-AnchorOauthToken -OauthToken $OauthToken -NoRefresh $NoRefreshToken #Check to make sure the Oauth token is valid and refresh if needed.
     
@@ -1092,7 +1250,7 @@ Function Get-AnchorData {
         $resultsCount = $results.results.count
         $totalResults = $results.total #The call will only return 100 objects at a time. This tells us if there are more to get.
         $body+=@{'offset' = '0'} #Because we're going to need to increment the offset, and we didn't have an offset as part of the query to begin, we have to add a zero-value offset before we can increment it.
-        While ($totalResults -gt $resultsCount){ # Keep calling the endpoint until we've squeezed out all the data.
+        While ($resultsCount -lt $totalResults -and $resultsCount -lt $ResultsLimit){ # Keep calling the endpoint until we've squeezed out all the data.
             $PageOffset+=100 # We want to get the next 100 results
             $body.offset = "$PageOffset" # Update the offset value for the next Api call.
             $results = Invoke-RestMethod -Uri "$apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $body

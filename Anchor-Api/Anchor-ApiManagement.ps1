@@ -61,12 +61,12 @@ Function New-AnchorFileShare {
     begin{
         $expiresValue = If($expires){[string]$(Get-Date($expires) -Format 'yyyy-MM-dd')}Else{$null}
         $apiQuery = @{
-            'login_required' = $login_required
+            'login_required' = "$(If($login_required){"true"}Else{"false"})"
             'expires' = $expiresValue
             'subscribers'=[string]$($subscribers -join ',')
-            'notify_subscribers'=$notify_subscribers
+            'notify_subscribers'= "$(If($notify_subscribers){"true"}Else{"false"})"
             'download_limit'=$download_limit
-            'download_notify'=$download_notify
+            'download_notify'= "$(If($download_notify){"true"}Else{"false"})"
         }
     }
     process{
