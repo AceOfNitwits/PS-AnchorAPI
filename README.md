@@ -112,15 +112,13 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ## Finish populating reporting functions
 
-✔ List an organization's users
+✔ List an organization's guests
 
-⬜ List an organization's guests
+✔ List an organization's groups
 
-⬜ List an organization's groups
+✔ List an organization's authentication sources
 
-⬜ List an organization's authentication sources
-
-⬜ List recent activity for an organization
+✔ List recent activity for an organization
 
 ⬜ Get usage for an organization
 
@@ -144,7 +142,7 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ⬜ Get a machine mapping
 
-⬜ Get a list of activity types
+✔ Get a list of activity types
 
 ⬜ Get an activity record
 
