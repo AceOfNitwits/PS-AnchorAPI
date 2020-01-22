@@ -327,9 +327,9 @@ Function Get-AnchorOrgMachines {
     Returns a collection of AnchorMachine objects.
     
     .NOTES
-    The owning organization_id is not returned in the API call, so we add it from the supplied value.
+    The owning company_id is not returned in the API call, so we add it from the supplied value.
     Also, the API call returns all machines from the organization and all child organizations.
-    Therefore, the organization_id does not always represent the owning organization of a particular machine.
+    Therefore, the company_id does not always represent the owning organization of a particular machine.
     Use the -ExcludeChildren property to return machines that are not from child organizations.
 
     .PARAMETER id
@@ -369,7 +369,7 @@ Function Get-AnchorOrgMachines {
     throttle_exception_throttle  : 
     throttled                    : False
     type                         : machine
-    organization_id              : 123456
+    company_id              : 123456
 
     .EXAMPLE
     C:\PS> Get-AnchorOrgMachines -id 123456, 123457 -ExcludeChildren
@@ -395,7 +395,7 @@ Function Get-AnchorOrgMachines {
     throttle_exception_throttle  : 
     throttled                    : False
     type                         : machine
-    organization_id              : 123456
+    company_id              : 123456
     (...)
 
     .EXAMPLE
@@ -422,7 +422,7 @@ Function Get-AnchorOrgMachines {
     throttle_exception_throttle  : 
     throttled                    : False
     type                         : machine
-    organization_id              : 123456
+    company_id              : 123456
     (...)
 
     .LINK
@@ -455,15 +455,15 @@ Function Get-AnchorOrgMachines {
             }
             # If there are no results, we don't want to return an empty object with just the organization property populated.
             If($results){
-                $results | Select-Object *, @{N='organization_id';E={"$orgId"}} #, @{N='org_name';E={$orgName}}
+                $results | Select-Object *, @{N='company_id';E={"$orgId"}} #, @{N='org_name';E={$orgName}}
             }
         }
     }
 }
 
+Function Get-AnchorOrgChildren {
 # Accepts an AnchorOrg object or collection of AnchorOrg objects.
 # Returns AnchorOrg objects.
-Function Get-AnchorOrgChildren {
     [CmdletBinding()]
     param(
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
@@ -488,7 +488,17 @@ Function Get-AnchorOrgRoots {
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/roots"
-            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+            try{
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+            }
+            catch{
+                $exception = $_.Exception
+                Switch ($exception.Response.StatusCode.value__){
+                    403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                    404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                    default {$results = $exception}
+                }
+            }
             $results
         }
     }
@@ -538,7 +548,8 @@ Function Get-AnchorOrgShareSubscribers {
     param(
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$company_id,
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor Root ID')][string[]]$id,
-        [Parameter(HelpMessage="return individual subscribers from groups")][switch]$IncludeFromGroup
+        [Parameter(HelpMessage='Return individual subscribers from groups')][switch]$IncludeFromGroup,
+        [Parameter(HelpMessage='Return unmodified output (with 3-tuples for subscribers) instead of object-formatted output')][switch]$Raw
     )
     begin{
         $apiQuery = @{
@@ -550,9 +561,48 @@ Function Get-AnchorOrgShareSubscribers {
         $rootId = $id
         $apiEndpoint = "organization/$orgId/share/$rootId/subscribers"
         $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
-        $results
+        If($Raw){
+            $results
+        }
+        Else{
+            $cleanedResults = [pscustomobject]@()
+            $results.PSObject.Properties | ForEach-Object{
+                $myName = $_.Name
+                $_.PSObject.Properties
+            }
+        }
     }
 }
+
+Function Get-AnchorOrgUsers {
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#list-an-organization's-users
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
+        
+    )
+    process{
+        foreach ($orgId in $id){
+            $apiEndpoint = "organization/$OrgId/persons"
+            try{
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+            }
+            catch{
+                $exception = $_.Exception
+                Switch ($exception.Response.StatusCode.value__){
+                    403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                    404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                    default {$results = $exception}
+                }
+            }
+            $results
+        }
+    }
+}
+
 
 # Note that the Include switches must be explicitly called, despite the fact that some are on by default in the API.
 Function Get-AnchorRootMetadata {

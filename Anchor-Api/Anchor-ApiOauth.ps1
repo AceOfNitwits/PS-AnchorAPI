@@ -3,7 +3,19 @@
 # Anchor API Documentation: http://developer.anchorworks.com/v2/
 #endregion
 
-$oauthUri = "https://clocktowertech.syncedtool.com/oauth/token"
+$oauthUri = "https://syncedtool.com/oauth/token"
+
+Function Set-AnchorOauthUri{
+<#
+    .SYNOPSIS
+    Sets the URI for obtaining Anchor Oauth tokens for this session.
+#>
+    [Parameter(HelpMessage='URI for obtaining Anchor Oauth token')][string]$Uri
+    Write-Host "Current URI:"
+    Write-Host $oauthUri
+    $newUri = Read-Host "New URI (default: no change)"
+    If($newUri){$oauthUri=$newUri}
+}
 
 Function Authenticate-AnchorAccount{
     param(
@@ -70,16 +82,22 @@ param([string]$Username, [string]$Password)
     #$Script:anchorOauthToken
 }
 
-Function Get-AnchorAuthStatus{
-    If($Script:anchorOauthToken){
-        $expiryTimespan = New-TimeSpan -Start (Get-Date) -End $Script:anchorOauthToken.expires_on
-        Switch ($expiryTimespan -gt 0)  {
-            $True {[pscustomobject]@{'auth_status'='valid';'expires_on'=($Script:anchorOauthToken.expires_on)}}
-            $False {[pscustomobject]@{'auth_status'='false';'expires_on'=($Script:anchorOauthToken.expires_on)}}
-        }
+Function Get-AnchorOAuthState{
+    [Parameter(Position=0,HelpMessage='Instead of an object with state data, returns the full token object.')][switch]$GetToken
+    If($GetToken){
+        $Script:anchorOauthToken
     }
     Else{
-        [pscustomobject]@{'auth_status'='not_authenticated';'expires_on'=$null}
+        If($Script:anchorOauthToken){
+            $expiryTimespan = New-TimeSpan -Start (Get-Date) -End $Script:anchorOauthToken.expires_on
+            Switch ($expiryTimespan -gt 0)  {
+                $True {[pscustomobject]@{'auth_status'='valid';'expires_on'=($Script:anchorOauthToken.expires_on)}}
+                $False {[pscustomobject]@{'auth_status'='false';'expires_on'=($Script:anchorOauthToken.expires_on)}}
+            }
+        }
+        Else{
+            [pscustomobject]@{'auth_status'='not_authenticated';'expires_on'=$null}
+        }
     }
 }
 

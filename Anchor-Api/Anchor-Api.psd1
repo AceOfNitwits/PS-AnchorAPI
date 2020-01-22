@@ -9,25 +9,27 @@
     )
     FunctionsToExport = @(
         'Authenticate-AnchorAccount',
-        'Get-AnchorAuthStatus',
+        'Find-RootFilesAndFolders',
         'Get-AnchorApiVersion',
         'Get-AnchorFolderMetadata',
         'Get-AnchorFileMetadata',
-        'Get-AnchorPerson',
+        'Get-AnchorMachineBackups',
+        'Get-AnchorOauthState',
         'Get-AnchorOrg',
-        'Get-AnchorOrgMachines',
         'Get-AnchorOrgChildren',
+        'Get-AnchorOrgMachines',
         'Get-AnchorOrgRoots',
         'Get-AnchorOrgShare',
         'Get-AnchorOrgShares',
         'Get-AnchorOrgShareSubscribers',
-        'Get-AnchorRootMetadata',
+        'Get-AnchorOrgUsers',
+        'Get-AnchorPerson',
         'Get-AnchorRootFilesModifiedSince',
         'Get-AnchorRootLastModified',
-        'Get-AnchorMachineBackups',
-        'Download-AnchorFile',
+        'Get-AnchorRootMetadata',
         'New-AnchorFileShare',
-        'Find-RootFilesAndFolders'
+        'Save-AnchorFile',
+        'Set-AnchorOauthUri'
     )
     CmdletsToExport = @()
     AliasesToExport = @()

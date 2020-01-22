@@ -8,7 +8,7 @@
 #endregion
 
 
-Function Download-AnchorFile {
+Function Save-AnchorFile {
     [CmdletBinding()]
     param(
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Root ID')][string[]]$root_id, 
