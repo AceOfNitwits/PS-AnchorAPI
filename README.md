@@ -112,7 +112,7 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ## Finish populating reporting functions
 
-⬜ Search files and folders
+✔ Search files and folders
 
 ⬜ Get a root (by organization)
 
