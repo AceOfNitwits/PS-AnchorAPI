@@ -44,6 +44,8 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✅ Get-AnchorGuest (Get a guest)
 
+   Provides an option to `-Expand` the object to include company_name and creator_name for human-friendly output.
+
 ✅ Get-AnchorActivityTypes (Get a list of activity types)
 
 ⬜ Get a machine                                        
@@ -79,6 +81,8 @@ Look at Anchor-BackupCheck.ps1 for examples.
 ✅ Get-AnchorOrgGroups (List an organization's groups)
 
 ✅ Get-AnchorOrgGuests (List an organization's guests) 
+   
+   Provides option to set a `-RecordCountLimit` 
 
 ✅ Get-AnchorOrgMachines (List an organization's machines)
 
@@ -98,11 +102,21 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✅ Get-AnchorPersonActivity (List recent activity for a person)
 
+   Automatically gets activity descriptions and returns them as part of the object for human-friendly output.
+   
+   Provides option to set a `-RecordCountLimit` 
+
 ✅ Get-AnchorOrgActivity (List recent activity for an organization)
+
+   Automatically gets activity descriptions and returns them as part of the object for human-friendly output.
+
+   Provides option to set a `-RecordCountLimit` 
 
 ✅ Get-AnchorRootFilesModifiedSince (List recently modified files)
 
 ✅ Get-AnchorOrgShareSubscribers( List share subscribers)
+
+   Makes the returned data structure more friendly. Contains a `-Raw` option if you prefer the original, unfriendly object structure.
 
 ✅ Find-AnchorRootFilesAndFolders (Search files and folders)
 
