@@ -12,148 +12,205 @@ To see the list of available commands, use `Get-Command -Module Anchor-Api`.
 `Get-Help <command-name>` returns helpful info in some cases.
 Look at Anchor-BackupCheck.ps1 for examples.
 
-# To-do 
+# Functions
 
-## Finish populating management functions
+## Authentication functions 🔑
 
-⬜ Rename a file
+✅ Get-AnchorOauthState
 
-⬜ Move a file
+   Returns the state of the current Oauth token
 
-⬜ Lock a file
+✅ Get-AnchorOauthToken
 
-⬜ Unlock a file
+  Returns the current Oauth token so it can be inspected or manually imported into another session without needing to re-authenticate.
 
-⬜ Delete a file
+✅ Register-AnchorAccount
 
-⬜ Upload a file to a folder
+  Gets an Oauth token from the API.
 
-⬜ Create a subfolder
+✅ Set-AnchorOauthToken
+
+  Manually set the Oauth token for the current session to prevent the need to authenticate again if you already have a valid token from another session.
+
+✅ Set-AnchorOauthUri
+
+  Change the Web URI from which tokens are granted. Should work with self-hosted Anchor instances.
+
+## Reporting functions 🐇
+
+⬜ Get a backup                                         
+
+⬜ Get a group                                          
+
+✅ Get-AnchorGuest (Get a guest)
+
+✅ Get-AnchorActivityTypes (Get a list of activity types)
+
+⬜ Get a machine                                        
+
+⬜ Get a machine mapping                                
+
+⬜ Get a machine's status                               
+
+✅ Get-AnchorPerson (Get a person)
+
+⬜ Get a root                                           
+
+✅ Get-AnchorOrgShare (Get a share)
+
+⬜ Get an activity record                               
+
+✅ Get-AnchorOrg (Get an organization)
+
+✅ Get-AnchorFileMetadata (Get file metadata)
+
+⬜ Get files and folders shared with a guest            
+
+✅ Get-AnchorFolderMetadata (Get folder metadata)
+
+✅ Get-AnchorRootMetadata (Get root metadata)
+
+✅ Get-AnchorOrgUsage (Get usage for an organization)
+
+✅ Get-AnchorOrgAuthSources (List an organization's authentication sources)
+
+✅ Get-AnchorOrgChildren (List an organization's child organizations)
+
+✅ Get-AnchorOrgGroups (List an organization's groups)
+
+✅ Get-AnchorOrgGuests (List an organization's guests) 
+
+✅ Get-AnchorOrgMachines (List an organization's machines)
+
+✅ Get-AnchorOrgRoots (List an organization's roots)
+
+✅ Get-AnchorOrgShares (List an organization's shares)   
+
+✅ Get-AnchorOrgUsers (List an organization's users)
+
+✅ Get-AnchorMachineBackups (List backups)
+
+⬜ List files on a file server enabled machine          
+
+⬜ List group members                                   
+
+⬜ List mapped paths on a file server enabled machine   
+
+✅ Get-AnchorPersonActivity (List recent activity for a person)
+
+✅ Get-AnchorOrgActivity (List recent activity for an organization)
+
+✅ Get-AnchorRootFilesModifiedSince (List recently modified files)
+
+✅ Get-AnchorOrgShareSubscribers( List share subscribers)
+
+✅ Find-AnchorRootFilesAndFolders (Search files and folders)
+
+✅ Get-AnchorApiVersion (Version)
+
+✅ Get-AnchorRootLastModified (not specified in API)
+
+  Uses multiple API functions to determine the last time any file in a root was modified.
+
+## Management functions (Use at your own risk! Potential disruption, security violations, or data loss if used incorrectly.) 💣
+
+⬜ Convert a guest to a standard account                
+
+⬜ Create a backup                                      
+
+⬜ Create a folder in a root                            
+
+⬜ Create a group                                       
+
+⬜ Create a guest                                       
+
+⬜ Create a person                                      
+
+⬜ Create a share                                       
+
+⬜ Create a subfolder                                   
+
+⬜ Create an account sync root                          
+
+⬜ Create an activity record                            
+
+⬜ Create an organization                               
+
+⬜ Delete a backup                                      
+
+⬜ Delete a file                                        
+
+⬜ Delete a folder                                      
+
+⬜ Delete a group                                       
+
+⬜ Delete a guest                                       
+
+⬜ Delete a machine mapping                             
+
+⬜ Delete a person                                      
+
+⬜ Delete a share                                       
+
+⬜ Delete an organization                               
+
+✅ Save-AnchorFile (Download a file)
 
 ⬜ Download a folder
 
-⬜ Share a folder
+⬜ Lock a file                                          
 
-⬜ Rename a folder
+⬜ Lock a folder                                        
 
-⬜ Move a folder
-
-⬜ Lock a folder
-
-⬜ Unlock a folder
-
-⬜ Delete a folder
-
-⬜ Upload a file to a root
-
-⬜ Create a folder in a root
-
-⬜ Lock a root
-
-⬜ Unlock a root
-
-⬜ Create an organization
-
-⬜ Update an organization
-
-⬜ Disable an organization
-
-⬜ Enable an organization
-
-⬜ Delete an organization
-
-⬜ Update an organization's policy
-
-⬜ Create a share
-
-⬜ Update a share
-
-⬜ Update share subscribers
-
-⬜ Delete a share
-
-⬜ Create a person
-
-⬜ Update a person
-
-⬜ Delete a person
-
-⬜ Create an account sync root
-
-⬜ Create a guest
-
-⬜ Update a guest
-
-⬜ Delete a guest
-
-⬜ Convert a guest to a standard account
-
-⬜ Create a group
-
-⬜ Update a group
-
-⬜ Update group members
-
-⬜ Delete a group
-
-⬜ Enable file server on a machine
-
-⬜ Disable file server on a machine
+⬜ Lock a root                                          
 
 ⬜ Map a path on a file server enabled machine to a root
 
-⬜ Delete a machine mapping
+⬜ Move a file                                          
 
-⬜ Restore a backup
+⬜ Move a folder                                        
 
-⬜ Delete a backup
+⬜ Rename a file                                        
 
-⬜ Create an activity record
+⬜ Rename a folder                                      
 
-## Finish populating reporting functions
+⬜ Restore a backup                                     
 
-✔ List an organization's guests
+✅ New-AnchorFileShare (Share a file)
 
-✔ List an organization's groups
+⬜ Share a folder                                       
 
-✔ List an organization's authentication sources
+⬜ Unlock a file                                        
 
-✔ List recent activity for an organization
+⬜ Unlock a folder                                      
 
-✔ Get usage for an organization
+⬜ Unlock a root                                        
 
-✔ List recent activity for a person
+⬜ Update a group                                       
 
-✔ Get a guest
+⬜ Update a guest                                       
 
-⬜ Get files and folders shared with a guest
+⬜ Update a person                                      
 
-⬜ Get a group
+⬜ Update a share                                       
 
-⬜ Get a grip
+⬜ Update an organization                               
 
-⬜ List group members
+⬜ Update an organization's policy                      
 
-⬜ Get a machine
+⬜ Update group members                                 
 
-⬜ Get a machine's status
+⬜ Update share subscribers                             
 
-⬜ List files on a file server enabled machine
+⬜ Upload a file to a folder                            
 
-⬜ List mapped paths on a file server enabled machine
+⬜ Upload a file to a root
 
-⬜ Get a machine mapping
+# To-Do
 
-✔ Get a list of activity types
+## More examples. 
 
-⬜ Get an activity record
-
-
-## ⬜ More examples. 
-
-## ✔ Convert to a module
-
-## ⬜ Improve authentication logic to only prompt for TOTP when it's actually needed. 
+## Improve authentication logic to only prompt for TOTP when it's actually needed. 
 
 # Comments
 - I know I'm onto something when I can write a statement like this, and it works: `get-anchororg -top | Get-AnchorOrgChildren | where name -match "little" | get-anchororgshares | where name -match "Sync" | Get-AnchorOrgShareSubscribers -IncludeFromGroup -Raw`
