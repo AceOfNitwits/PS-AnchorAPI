@@ -154,3 +154,6 @@ Look at Anchor-BackupCheck.ps1 for examples.
 ## ✔ Convert to a module
 
 ## ⬜ Improve authentication logic to only prompt for TOTP when it's actually needed. 
+
+# Comments
+- I know I'm onto something when I can write a statement like this, and it works: `get-anchororg -top | Get-AnchorOrgChildren | where name -match "little" | get-anchororgshares | where name -match "Sync" | Get-AnchorOrgShareSubscribers -IncludeFromGroup -Raw`
