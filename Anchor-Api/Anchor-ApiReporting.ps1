@@ -70,6 +70,34 @@ Function Get-AnchorApiVersion {
     $results
 }
 
+Function Get-AnchorFileMetadata {
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Root ID')][string[]]$root_id, 
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor File ID')][string[]]$id, 
+        [Parameter(HelpMessage='Include collection of permissions for current user')][switch]$IncludePermissions
+    )
+    begin{
+        $apiQuery = @{
+            'include_permissions' = "$(If($IncludePermissions){"true"}Else{"false"})"
+        }
+    }
+    process{
+        $rootId = $root_id
+        $fileId = $id
+        $apiEndpoint = "files/$rootId/$fileId"
+        try{
+            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+        }
+        catch{
+            Switch -regex ($Error[0].Exception){
+                default {Write-Host $error[0].Exception}
+            }
+        }
+        $results
+    }
+}
+
 Function Get-AnchorFolderMetadata {
     [CmdletBinding()]
     param(
@@ -107,55 +135,26 @@ Function Get-AnchorFolderMetadata {
     }
 }
 
-
-Function Get-AnchorFileMetadata {
-    [CmdletBinding()]
-    param(
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Root ID')][string[]]$root_id, 
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor File ID')][string[]]$id, 
-        [Parameter(HelpMessage='Include collection of permissions for current user')][switch]$IncludePermissions
-    )
-    begin{
-        $apiQuery = @{
-            'include_permissions' = "$(If($IncludePermissions){"true"}Else{"false"})"
-        }
-    }
-    process{
-        $rootId = $root_id
-        $fileId = $id
-        $apiEndpoint = "files/$rootId/$fileId"
-        try{
-            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
-        }
-        catch{
-            Switch -regex ($Error[0].Exception){
-                default {Write-Host $error[0].Exception}
-            }
-        }
-        $results
-    }
-}
-
-Function Get-AnchorPerson {
+Function Get-AnchorGuest {
 <#
     .SYNOPSIS
-    Returns a collection of AnchorPerson objects for a given AnchorPerson id or set of id's or a given email address or set of email addresses.
+    Returns a collection of AnchorGuest objects for a given AnchorGuest id or set of id's or a given email address or set of email addresses.
 
     .DESCRIPTION
-    Returns a collection of AnchorPerson objects.
-    Accepts one or more AnchorPerson id's via argument or a colleciton of AnchorPerson objects from the pipeline.
-    Accepts one or more email addresses via argument or a colleciton of AnchorPerson objects from the pipeline.
+    Returns a collection of AnchorGuest objects.
+    Accepts one or more AnchorGuest id's via argument or a colleciton of AnchorGuest objects from the pipeline.
+    Accepts one or more email addresses via argument or a colleciton of AnchorGuest objects from the pipeline.
 
     .NOTES
     
     .PARAMETER id
-    One or more AnchorPerson id's.
-
-    .PARAMETER Me
-    Switch to return the AnchorPerson object for the authenticated user.
+    One or more AnchorGuest id's.
 
     .PARAMETER ByEmail
     Changes the functionality of the function to accept email address instead of id.
+
+    .PARAMETER Expand
+    If TRUE, properties are added to the output object which contain the text value of the comapny_name and creator_name.
 
     .INPUTS
     A collection of AnchorPerson objects
@@ -165,35 +164,48 @@ Function Get-AnchorPerson {
 
 
     .LINK
-    http://developer.anchorworks.com/v2/#get-a-person
+    http://developer.anchorworks.com/v2/#get-a-guest
 
     .LINK
     Get-AnchorOauthToken
 #>
     [CmdletBinding()]
-    [Alias('AnchorPerson')]
+    [Alias('AnchorGuest')]
     param(
         [Parameter(ParameterSetName='ById',Position=0,ValueFromPipelineByPropertyName)][string[]]$id,
         [Parameter(ParameterSetName='ByEmail',Position=0,ValueFromPipelineByPropertyName)][string[]]$email,
         [Parameter(ParameterSetName='ByEmail',Position=1,HelpMessage='Accept email address instead of person id.')][switch]$ByEmail,
-        [Parameter(ParameterSetName='Me',Position=0,HelpMessage='Return the person object for the authenticated user.')][switch]$Me
+        [Parameter(HelpMessage='Add names of objects referenced in the returned object')][switch]$Expand
     )
     process{
-        # This endpoint can be called wihout an id to get the data for the currently logged-on person.
-        If($Me){
-            $apiEndpoint = "person"
-            Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
-        }
         # We might have multiple $id values passed via a function parameter . . . and that's okay.
         If($ByEmail){
             ForEach ($emailAddr in $email){
-                $apiEndpoint = "person/$emailAddr"
-                Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+                $apiEndpoint = "guest/$emailAddr"
+                $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+                If($Expand){
+                    $myOrgId = $results.company_id
+                    $myPersonId = $results.creator_id
+                    $myCompany = [string]$(Get-AnchorOrg -id $myOrgId).name
+                    $myCreator = [string]$(Get-AnchorPerson -id $myPersonId).display_name
+                    $results | Add-Member -MemberType NoteProperty -Name 'company_name' -Value $myCompany
+                    $results | Add-Member -MemberType NoteProperty -Name 'creator_name' -Value $myCreator
+                }
+                $results
             }
         } Else {
-            ForEach ($personId in $id){
-                $apiEndpoint = "person/$personId"
-                Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            ForEach ($guestId in $id){
+                $apiEndpoint = "guest/$guestId"
+                $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+                If($Expand){
+                    $myOrgId = $results.company_id
+                    $myPersonId = $results.creator_id
+                    $myCompany = [string]$(Get-AnchorOrg -id $myOrgId).name
+                    $myCreator = [string]$(Get-AnchorPerson -id $myPersonId).display_name
+                    $results | Add-Member -MemberType NoteProperty -Name 'company_name' -Value $myCompany
+                    $results | Add-Member -MemberType NoteProperty -Name 'creator_name' -Value $myCreator
+                }
+                $results
             }
         }
     }
@@ -384,7 +396,6 @@ Function Get-AnchorOrgActivity {
     }
 }
 
-
 Function Get-AnchorOrgAuthSources {
 <#
     .LINK
@@ -409,6 +420,23 @@ Function Get-AnchorOrgAuthSources {
                     default {$results = $exception}
                 }
             }
+            $results
+        }
+    }
+}
+
+Function Get-AnchorOrgChildren {
+# Accepts an AnchorOrg object or collection of AnchorOrg objects.
+# Returns AnchorOrg objects.
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
+    )
+    process{
+        #There may be multiple $id values passed by the function -id parameter
+        foreach ($orgId in $id){
+            $apiEndpoint = "organization/$orgId/organizations"
+            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndPoint
             $results
         }
     }
@@ -559,23 +587,6 @@ Function Get-AnchorOrgMachines {
     }
 }
 
-Function Get-AnchorOrgChildren {
-# Accepts an AnchorOrg object or collection of AnchorOrg objects.
-# Returns AnchorOrg objects.
-    [CmdletBinding()]
-    param(
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
-    )
-    process{
-        #There may be multiple $id values passed by the function -id parameter
-        foreach ($orgId in $id){
-            $apiEndpoint = "organization/$orgId/organizations"
-            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndPoint
-            $results
-        }
-    }
-}
-
 
 Function Get-AnchorOrgRoots {
     [CmdletBinding()]
@@ -602,22 +613,6 @@ Function Get-AnchorOrgRoots {
     }
 }
 
-Function Get-AnchorOrgShares {
-# http://developer.anchorworks.com/v2/#list-an-organization's-shares
-    [CmdletBinding()]
-    param(
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
-        
-    )
-    process{
-        foreach ($orgId in $id){
-            $apiEndpoint = "organization/$OrgId/shares"
-            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
-            $results
-        }
-    }
-}
-
 Function Get-AnchorOrgShare {
 # http://developer.anchorworks.com/v2/#get-a-share
 # This doesn't seem to return anything different than Get-AnchorRootMetadata -IncludeLockInfo.
@@ -634,6 +629,22 @@ Function Get-AnchorOrgShare {
         $apiEndpoint = "organization/$orgId/share/$rootId"
         $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
         $results
+    }
+}
+
+Function Get-AnchorOrgShares {
+# http://developer.anchorworks.com/v2/#list-an-organization's-shares
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
+        
+    )
+    process{
+        foreach ($orgId in $id){
+            $apiEndpoint = "organization/$OrgId/shares"
+            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+            $results
+        }
     }
 }
 
@@ -663,10 +674,17 @@ Function Get-AnchorOrgShareSubscribers {
             $results
         }
         Else{
-            $cleanedResults = [pscustomobject]@()
+            $cleanedResults = [pscustomobject]@{}
             $results.PSObject.Properties | ForEach-Object{
                 $myName = $_.Name
-                $_.PSObject.Properties
+                $mySubscriberType = [pscustomobject]@{}
+                $_ | ForEach-Object{
+                    $myId = $_[0]
+                    $myMachine = $_[1]
+                    $myPermissions = $_[2]
+                    $mySubscriberType+=[pscustomobject]@{id=$myId;machine_id=$myMachine;permissions=$myPermissions}
+                }
+                $cleanedResults+=[pscustomobject]@{$myName=$mySubscriberType}
             }
         }
     }
@@ -709,14 +727,14 @@ Function Get-AnchorOrgGuests {
 #>
     [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
-        
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id,
+        [Parameter(HelpMessage='Limits the number of objects to return to the next highest multiple of 100. Default:1000')][int]$RecordCountLimit
     )
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/guests"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
             }
             catch{
                 $exception = $_.Exception
@@ -760,6 +778,174 @@ Function Get-AnchorOrgGroups {
     }
 }
 
+Function Get-AnchorOrgUsage {
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#get-usage-for-an-organization
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id,
+        [Parameter(HelpMessage='Limits the number of objects to return to the next highest multiple of 100. Default:1000')][int]$RecordCountLimit
+        
+    )
+    process{
+        foreach ($orgId in $id){
+            $apiEndpoint = "organization/$OrgId/metrics/usage"
+            try{
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
+                $results = $results | Select-Object *, @{N='activity';E={$activityTypesHash[$_.activity_type_id]}}
+            }
+            catch{
+                $exception = $_.Exception
+                Switch ($exception.Response.StatusCode.value__){
+                    403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                    404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                    default {$results = $exception}
+                }
+            }
+            $results
+        }
+    }
+}
+
+Function Get-AnchorPerson {
+<#
+    .SYNOPSIS
+    Returns a collection of AnchorPerson objects for a given AnchorPerson id or set of id's or a given email address or set of email addresses.
+
+    .DESCRIPTION
+    Returns a collection of AnchorPerson objects.
+    Accepts one or more AnchorPerson id's via argument or a colleciton of AnchorPerson objects from the pipeline.
+    Accepts one or more email addresses via argument or a colleciton of AnchorPerson objects from the pipeline.
+
+    .NOTES
+    
+    .PARAMETER id
+    One or more AnchorPerson id's.
+
+    .PARAMETER Me
+    Switch to return the AnchorPerson object for the authenticated user.
+
+    .PARAMETER ByEmail
+    Changes the functionality of the function to accept email address instead of id.
+
+    .INPUTS
+    A collection of AnchorPerson objects
+
+    .OUTPUTS
+    A collection of AnchorPerson objects
+
+
+    .LINK
+    http://developer.anchorworks.com/v2/#get-a-person
+
+    .LINK
+    Get-AnchorOauthToken
+#>
+    [CmdletBinding()]
+    [Alias('AnchorPerson')]
+    param(
+        [Parameter(ParameterSetName='ById',Position=0,ValueFromPipelineByPropertyName)][string[]]$id,
+        [Parameter(ParameterSetName='ByEmail',Position=0,ValueFromPipelineByPropertyName)][string[]]$email,
+        [Parameter(ParameterSetName='ByEmail',Position=1,HelpMessage='Accept email address instead of person id.')][switch]$ByEmail,
+        [Parameter(ParameterSetName='Me',Position=0,HelpMessage='Return the person object for the authenticated user.')][switch]$Me
+    )
+    process{
+        # This endpoint can be called wihout an id to get the data for the currently logged-on person.
+        If($Me){
+            $apiEndpoint = "person"
+            try{
+                $results =Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            }
+            catch{
+                $exception = $_.Exception
+                Switch ($exception.Response.StatusCode.value__){
+                    403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                    404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                    default {$results = $exception}
+                }
+            }
+            $results
+        }
+        # We might have multiple $id values passed via a function parameter . . . and that's okay.
+        If($ByEmail){
+            ForEach ($emailAddr in $email){
+                $apiEndpoint = "person/$emailAddr"
+                try{
+                    $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+                }
+                catch{
+                    $exception = $_.Exception
+                    Switch ($exception.Response.StatusCode.value__){
+                        403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                        404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                        default {$results = $exception}
+                    }
+                }
+                $results
+            }
+        } Else {
+            ForEach ($personId in $id){
+                $apiEndpoint = "person/$personId"
+                try{
+                    $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+                }
+                catch{
+                    $exception = $_.Exception
+                    Switch ($exception.Response.StatusCode.value__){
+                        403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                        404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                        default {$results = $exception}
+                    }
+                }
+                $results
+            }
+        }
+    }
+}
+
+Function Get-AnchorPersonActivity {
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#list-recent-activity-for-a-person
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Person ID')][string[]]$id,
+        [Parameter(HelpMessage='Limits the number of objects to return to the next highest multiple of 100. Default:1000')][int]$RecordCountLimit
+        
+    )
+    # The activities that will be reutrned have numeric activity types.
+    #   It might be nice to add the activity names to the resulting object.
+    #   To do this, we're ging to put all the activity id's and names into a hash table.
+    begin{
+        $activityTypes = Get-AnchorActivityTypes | Select-Object id, activity
+        $activityTypesHash = @{}
+        $activityTypes | ForEach-Object {
+            $activityTypesHash[$_.id] = $_.activity
+        }
+
+    }
+    process{
+        foreach ($personId in $id){
+            $apiEndpoint = "person/$personId/activity"
+            try{
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
+                $results = $results | Select-Object *, @{N='activity';E={$activityTypesHash[$_.activity_type_id]}}
+            }
+            catch{
+                $exception = $_.Exception
+                Switch ($exception.Response.StatusCode.value__){
+                    403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                    404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                    default {$results = $exception}
+                }
+            }
+            $results
+        }
+    }
+}
 
 # Note that the Include switches must be explicitly called, despite the fact that some are on by default in the API.
 Function Get-AnchorRootMetadata {

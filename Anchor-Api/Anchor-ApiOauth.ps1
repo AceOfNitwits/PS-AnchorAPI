@@ -17,12 +17,30 @@ Function Set-AnchorOauthUri{
     If($newUri){$oauthUri=$newUri}
 }
 
-Function Authenticate-AnchorAccount{
+Function Register-AnchorAccount{
     param(
         [Parameter(Position=0)][string]$Username, 
         [Parameter(Position=1)][string]$Password
     )
     $Script:anchorOauthToken = New-AnchorOauthToken -Username $Username -Password $Password
+}
+
+Function Get-AnchorOauthToken{
+    $Script:anchorOauthToken
+}
+
+Function Set-AnchorOauthToken{
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipeline,Mandatory)][object]$InputObject
+    )
+    If($InputObject){
+        Write-Host "Oauth token set. Token will expire on $($InputObject.expires_on)`." -BackgroundColor Black -ForegroundColor Green
+        $Script:anchorOauthToken = $InputObject
+    }
+    Else{
+        Write-Host "No Oauth Token supplied." -BackgroundColor Black -ForegroundColor Yellow
+    }
 }
 
 Function New-AnchorOauthToken{
@@ -83,21 +101,15 @@ param([string]$Username, [string]$Password)
 }
 
 Function Get-AnchorOAuthState{
-    [Parameter(Position=0,HelpMessage='Instead of an object with state data, returns the full token object.')][switch]$GetToken
-    If($GetToken){
-        $Script:anchorOauthToken
+    If($Script:anchorOauthToken){
+        $expiryTimespan = New-TimeSpan -Start (Get-Date) -End $Script:anchorOauthToken.expires_on
+        Switch ($expiryTimespan -gt 0)  {
+            $True {[pscustomobject]@{'auth_status'='valid';'expires_on'=($Script:anchorOauthToken.expires_on)}}
+            $False {[pscustomobject]@{'auth_status'='false';'expires_on'=($Script:anchorOauthToken.expires_on)}}
+        }
     }
     Else{
-        If($Script:anchorOauthToken){
-            $expiryTimespan = New-TimeSpan -Start (Get-Date) -End $Script:anchorOauthToken.expires_on
-            Switch ($expiryTimespan -gt 0)  {
-                $True {[pscustomobject]@{'auth_status'='valid';'expires_on'=($Script:anchorOauthToken.expires_on)}}
-                $False {[pscustomobject]@{'auth_status'='false';'expires_on'=($Script:anchorOauthToken.expires_on)}}
-            }
-        }
-        Else{
-            [pscustomobject]@{'auth_status'='not_authenticated';'expires_on'=$null}
-        }
+        [pscustomobject]@{'auth_status'='not_authenticated';'expires_on'=$null}
     }
 }
 
@@ -154,7 +166,7 @@ Function Validate-AnchorOauthToken {
     Switch ($tokenStatus){
         "empty_token" {
             Write-Host "Not authenticated." -ForegroundColor Red -BackgroundColor Black
-            Authenticate-AnchorAccount
+            Register-AnchorAccount
             #$OauthToken = New-AnchorOauthToken
             #$OauthToken
         }
@@ -165,7 +177,7 @@ Function Validate-AnchorOauthToken {
         }
         "token_expired" {
             Write-Host "Token Expired. Must Reauthenticate" -ForegroundColor Yellow -BackgroundColor Black
-            Authenticate-AnchorAccount
+            Register-AnchorAccount
             #$OauthToken = New-AnchorOauthToken            
         }
     }

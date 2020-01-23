@@ -8,14 +8,17 @@
         '.\Anchor-ApiManagement.ps1'
     )
     FunctionsToExport = @(
-        'Authenticate-AnchorAccount',
+        'Register-AnchorAccount',
         'Find-RootFilesAndFolders',
         'Get-AnchorActivityTypes',
         'Get-AnchorApiVersion',
         'Get-AnchorFolderMetadata',
         'Get-AnchorFileMetadata',
+        'Get-AnchorGuest',
         'Get-AnchorMachineBackups',
         'Get-AnchorOauthState',
+        'Get-AnchorOauthToken',
+        'Set-AnchorOauthToken',
         'Get-AnchorOrg',
         'Get-AnchorOrgActivity',
         'Get-AnchorOrgAuthSources',
@@ -28,7 +31,9 @@
         'Get-AnchorOrgShares',
         'Get-AnchorOrgShareSubscribers',
         'Get-AnchorOrgUsers',
+        'Get-AnchorOrgUsage',
         'Get-AnchorPerson',
+        'Get-AnchorPersonActivity',
         'Get-AnchorRootFilesModifiedSince',
         'Get-AnchorRootLastModified',
         'Get-AnchorRootMetadata',
