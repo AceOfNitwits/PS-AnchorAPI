@@ -1,7 +1,9 @@
 # PowerShell Anchor-Api Module
 PowerShell module for managing Axcient Anchor via the v2 API
 
-Functions are PS-friendly, returning objects and accepting pipeline input.
+🌟 ***Now with filesystem navigation***
+
+Functions are PS-friendly, returning objects and accepting pipeline input where possible, including collections of objects.
 
 # Usage
 
@@ -170,7 +172,11 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✅ Save-AnchorFile (Download a file)
 
-⬜ Download a folder
+⬜ Save-AnchorFolder (Download a folder)
+
+   Defaults to downloading a ZIP file of folder contents.
+   
+   Include `-AsFiles` option to download child files and folders individually.
 
 ⬜ Lock a file                                          
 
@@ -220,11 +226,55 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ⬜ Upload a file to a root
 
+⬜ Write-AnchorFolder (not implemented in API)
+
+   Upload the contents and structure of a folder.
+
+## Navigation functions 📁
+
+Yes. You can navigate the Anchor file system from the PowerShell command line! It's not a PSDrive. It's kind of like FTP.
+
+✅ apwd
+
+   Display the present working Org:Root:Folder
+
+✅ aco/acc
+
+   Select a new organization/company by id
+   
+✅ alo/alc
+
+   List child organizations/companies of the present working organization/company
+   
+✅ acr
+
+   Select a new root by id
+   
+✅ alr
+
+   List roots in the present working organization/company
+   
+✅ acd
+
+   Select a new folder in the present working root by id
+   
+✅ aget
+
+   Download a file in the present working root by id
+   
+⬜ aput
+
+   Upload a file to the present working folder
+
 # To-Do
+
+## Complete all functions
 
 ## More examples. 
 
 ## Improve authentication logic to only prompt for TOTP when it's actually needed. 
+
+## Improve error handling.
 
 # Comments
 - I know I'm onto something when I can write a statement like this, and it works: `get-anchororg -top | Get-AnchorOrgChildren | where name -match "little" | get-anchororgshares | where name -match "Sync" | Get-AnchorOrgShareSubscribers -IncludeFromGroup -Raw`
