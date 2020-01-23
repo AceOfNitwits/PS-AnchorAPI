@@ -5,7 +5,7 @@ Functions are PS-friendly, returning objects and accepting pipeline input.
 
 # Usage
 
-Place all files except README.md and Anchor-BackupCheck.ps1 into a folder named Anchor-Api, in your $env:PSModulePath (usually %userprofile%\My Documents\WindowsPowerShell\Modules, or C:\Program Files\WindowsPowerShell\Modules, or C:\windows\system32\WindowsPowerShell\v1.0\Modules\).
+Download the files in the Anchor-Api folder to a folder named Anchor-Api, in your $env:PSModulePath (usually %userprofile%\My Documents\WindowsPowerShell\Modules, or C:\Program Files\WindowsPowerShell\Modules, or C:\windows\system32\WindowsPowerShell\v1.0\Modules\).
 
 Run `Import-Module Anchor-Api` to import the functions into your current session.
 To see the list of available commands, use `Get-Command -Module Anchor-Api`.
