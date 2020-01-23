@@ -1,5 +1,5 @@
 # PowerShell Anchor-Api Module
-PowerShell ✨module✨ for managing Axcient Anchor via the v2 API
+PowerShell module for managing Axcient Anchor via the v2 API
 
 Functions are PS-friendly, returning objects and accepting pipeline input.
 
@@ -120,11 +120,11 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✔ List recent activity for an organization
 
-⬜ Get usage for an organization
+✔ Get usage for an organization
 
-⬜ List recent activity for a person
+✔ List recent activity for a person
 
-⬜ Get a guest
+✔ Get a guest
 
 ⬜ Get files and folders shared with a guest
 
