@@ -5,7 +5,8 @@
     NestedModules = @(
         '.\Anchor-ApiOauth.ps1',
         '.\Anchor-ApiReporting.ps1',
-        '.\Anchor-ApiManagement.ps1'
+        '.\Anchor-ApiManagement.ps1',
+        '.\Anchor-ApiNav.ps1'
     )
     FunctionsToExport = @(
         'Register-AnchorAccount',
@@ -39,8 +40,28 @@
         'Get-AnchorRootMetadata',
         'New-AnchorFileShare',
         'Save-AnchorFile',
-        'Set-AnchorOauthUri'
+        'Set-AnchorOauthUri',
+        'Get-AnchorNavChildItem',
+        'Get-AnchorNavPath',
+        'Set-AnchorNavRoot',
+        'Get-AnchorNavRoots',
+        'Get-AnchorNavOrgs',
+        'Set-AnchorNavOrg',
+        'Set-AnchorNavFolder',
+        'Save-AnchorNavFile'
     )
     CmdletsToExport = @()
-    AliasesToExport = @()
+    AliasesToExport = @(
+        'apwd',
+        'acd',
+        'aco',
+        'acc',
+        'acr',
+        'als',
+        'adir',
+        'alo',
+        'alc',
+        'alr',
+        'aget'
+    )
 }
