@@ -134,6 +134,8 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ⬜ List group members
 
+⬜ Get a machine
+
 ⬜ Get a machine's status
 
 ⬜ List files on a file server enabled machine
