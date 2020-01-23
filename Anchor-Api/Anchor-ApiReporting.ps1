@@ -670,22 +670,51 @@ Function Get-AnchorOrgShareSubscribers {
         $rootId = $id
         $apiEndpoint = "organization/$orgId/share/$rootId/subscribers"
         $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
-        If($Raw){
+        If($Raw){ # I'm sorry I ever made this option.
             $results
         }
         Else{
+            #Loose your mind...
             $cleanedResults = [pscustomobject]@{}
-            $results.PSObject.Properties | ForEach-Object{
-                $myName = $_.Name
-                $mySubscriberType = [pscustomobject]@{}
-                $_ | ForEach-Object{
-                    $myId = $_[0]
-                    $myMachine = $_[1]
-                    $myPermissions = $_[2]
-                    $mySubscriberType+=[pscustomobject]@{id=$myId;machine_id=$myMachine;permissions=$myPermissions}
+            foreach ($property in $results.PSObject.Properties){
+                $myName = $property.Name
+                $mySubscribers = @()
+                Switch ($property.Name){
+                    'external_subscribers' { #These are formatted differently in a dictionary, which is sort of like a hashtable, but not at all compatible with PowerShell.
+                        $property.Value.PSObject.Properties | ForEach-Object {
+                            $myEmail = $_.Name
+                            $myResponse = $_.Value
+                            $mySubscriber = [pscustomobject]@{}
+                            $mySubscriber | Add-Member -MemberType NoteProperty -Name 'email' -Value $myEmail
+                            $mySubscriber | Add-Member -MemberType NoteProperty -Name 'response' -Value $myResponse
+                            $mySubscribers += $mySubscriber
+                        }
+                    }
+                    {($_ -eq 'from_group') -or ($_ -eq 'group_subscribers') -or ($_ -eq 'subscribers')} { # These are all formatted in three-tuple arrays, which are not all that easy to use in PowerShell.
+                        foreach ($tuple in $property.value){
+                            $myId = $tuple[0]
+                            If($tuple[1] -is [int]){ # It's a number, which is a machine_id
+                                $myMachine = $tuple[1]
+                                $mySubscriptionType = 'machine'
+                            }
+                            Else{
+                                $mySubscriptionType =$tuple[1]
+                                $myMachine = $null
+                            }
+                            $myPermissions = $tuple[2]
+                            $mySubscriber = [pscustomobject]@{}
+                            $mySubscriber | Add-Member -MemberType NoteProperty -Name 'id' -Value $myId
+                            $mySubscriber | Add-Member -MemberType NoteProperty -Name 'subscription_type' -Value $mySubscriptionType
+                            $mySubscriber | Add-Member -MemberType NoteProperty -Name 'machine_id' -Value $myMachine
+                            $mySubscriber | Add-Member -MemberType NoteProperty -Name 'permissions' -Value $myPermissions
+                            $mySubscribers += $mySubscriber
+                        }
+                    }
                 }
-                $cleanedResults+=[pscustomobject]@{$myName=$mySubscriberType}
+                $cleanedResults | Add-Member -MemberType NoteProperty -Name $myName -Value $mySubscribers
             }
+            $cleanedResults
+            # There. I fixed it for you.
         }
     }
 }
