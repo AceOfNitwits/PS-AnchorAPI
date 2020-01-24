@@ -277,4 +277,8 @@ Yes. You can navigate the Anchor file system from the PowerShell command line! I
 ## Improve error handling.
 
 # Comments
-- I know I'm onto something when I can write a statement like this, and it works: `get-anchororg -top | Get-AnchorOrgChildren | where name -match "little" | get-anchororgshares | where name -match "Sync" | Get-AnchorOrgShareSubscribers -IncludeFromGroup -Raw`
+- I know I'm onto something when I can write a statement like these, and they work: 
+
+`PS> get-anchororg -top | Get-AnchorOrgChildren | where name -match "little" | get-anchororgshares | where name -match "Sync" | Get-AnchorOrgShareSubscribers -IncludeFromGroup -Raw`
+
+`PS> Get-AnchorOrg -Top | Get-AnchorOrgChildren | ? name -Match "International" | Get-AnchorOrgRoots | ? name -EQ 'IGC Common Files' | Get-AnchorRootFilesModifiedSince -Since (Get-Date('2020-01-24 00:00')).ToUniversalTime()`
