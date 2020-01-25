@@ -71,6 +71,7 @@ Function Set-AnchorOauthToken{
     If($InputObject){
         Write-Host "Oauth token set. Token will expire on $($InputObject.expires_on)`." -BackgroundColor Black -ForegroundColor Green
         $Script:anchorOauthToken = $InputObject
+        Update-AnchorApiReadiness
     }
     Else{
         Write-Host "No Oauth Token supplied." -BackgroundColor Black -ForegroundColor Yellow
