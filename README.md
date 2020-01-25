@@ -42,7 +42,7 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ⬜ Get a backup                                         
 
-⬜ Get a group                                          
+✅ Get a group                                          
 
 ✅ Get-AnchorGuest (Get a guest)
 
