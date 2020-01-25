@@ -6,7 +6,7 @@
 
 #Run this first to get an Oauth token and top organization id
 Function Sign-In {
-    Authenticate-AnchorAccount
+    Register-AnchorAccount
 }
 
 # Populates various lists of anchor objects 
@@ -55,7 +55,9 @@ Function Get-AllBackups {
     # Excluding machine_type 'mobile' cuts down some of the work.
     # It takes about 0.3 seconds per machine. Using Measure-Command gives some mildly interesting data about how long it takes.
     $duration = Measure-Command{$script:anchorBackups = $anchorMachines | Where-Object machine_type -ne mobile | Get-AnchorMachineBackups}
+    $Script:anchorBackups | Select-Object * | FT
     $secondsPerMachine = $duration.TotalSeconds / ($anchorMachines | Where-Object machine_type -ne mobile).Count
+    Write-Host $anchorBackups.Count "backup roots found."
     Write-Host ($anchorMachines | Where-Object machine_type -ne mobile).Count "machines processed."
     Write-Host "$($duration.TotalSeconds) seconds duration."
     Write-Host "$secondsPerMachine seconds per machine."
@@ -65,9 +67,10 @@ Function Get-AllBackups {
 # Go make a sandwich while you wait for this to complete.
 Function Get-BackupsLastModified {
     Write-Host "Getting last_modified date for machine backups."
-    $duration = Measure-Command{$script:anchorBackupsLastModified = $anchorBackups | Get-AnchorRootLastModified}
+    $duration = Measure-Command{$script:anchorBackupsLastModified = $anchorBackups | Get-AnchorRootLastModified -MaxLookback 31 -Verbose}
+    $script:anchorBackupsLastModified  | Add-Member -MemberType ScriptProperty -Name 'age(days)' -Value {[math]::Round((New-TimeSpan -start (Get-Date($this.modified)) -end (Get-Date).ToUniversalTime()).TotalDays, 2)} -PassThru | Sort id | FT
     $secondsPerBackup = $duration.TotalSeconds / $anchorBackups.Count
-    Write-Host $anchorBackups.Count "backup roots processed."
+    Write-Host $script:anchorBackupsLastModified.Count "out of" $anchorBackups.Count "backup roots processed."
     Write-Host "$($duration.TotalSeconds) seconds duration."
     Write-Host "$secondsPerBackup seconds per backup root."
 }
@@ -83,13 +86,18 @@ Function Report-MachineBackups{
         $machineId = $_.machine_id
         $path = $_.path
         $myLastModified = ($Script:anchorBackupsLastModified | ? {$_.id -eq $rootId}).modified
+        $myAge = [math]::Round((New-TimeSpan -start (Get-Date($myLastModified)) -end (Get-Date).ToUniversalTime()).TotalDays, 2)
         $myMachine = $script:anchorOrgMachines | ? {$_.id -eq $machineId}
         $myMachineName = $myMachine.dns_name
-        $myMachineOrg = $myMachine.organization_id
+        $myMachineOrg = $myMachine.company_id
         $myOrgName = ($script:anchorOrgs | ? {$_.id -eq $myMachineOrg}).name
-        $Script:backupReport += [pscustomobject]@{'Organization'="$myOrgName";'Machine'="$myMachineName";'BackupPath'="$path";'LastModified'="$myLastModified"}
+        $myBackup =[pscustomobject]@{}
+        $myBackup | Add-Member -MemberType NoteProperty -Name 'Organization' -Value $myOrgName
+        $myBackup | Add-Member -MemberType NoteProperty -Name 'Machine' -Value $myMachineName
+        $myBackup | Add-Member -MemberType NoteProperty -Name 'BackupPath' -Value $path
+        $myBackup | Add-Member -MemberType NoteProperty -Name 'LastModified' -Value $myLastModified
+        $myBackup | Add-Member -MemberType NoteProperty -Name 'Age(Days)' -Value $myAge
+        $Script:backupReport += $myBackup
     }
-    $script:backupReport | ForEach-Object {
-        Write-Host ($_ | Out-String)
-    }
+    $script:backupReport
 }
