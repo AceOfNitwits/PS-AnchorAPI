@@ -9,13 +9,18 @@
         '.\Anchor-ApiNav.ps1'
     )
     FunctionsToExport = @(
-        'Register-AnchorAccount',
+        'Request-AnchorAuthorization',
+        'Revoke-AnchorAuthorization',
+        'Request-AnchorAuthorizationRefresh',
         'Find-RootFilesAndFolders',
         'Get-AnchorActivityTypes',
         'Get-AnchorApiVersion',
         'Get-AnchorFolderMetadata',
         'Get-AnchorFileMetadata',
+        'Get-AnchorGroup',
+        'Get-AnchorGroupMembers',
         'Get-AnchorGuest',
+        'Get-AnchorGuestFileShares',
         'Get-AnchorMachineBackups',
         'Get-AnchorOauthState',
         'Get-AnchorOauthToken',
@@ -52,6 +57,15 @@
     )
     CmdletsToExport = @()
     AliasesToExport = @(
+        'AnchorLogin',
+        'AnchorLogon',
+        'AnchorSignin',
+        'AnchorRefresh',
+        'AnchorLogout',
+        'AnchorLogoff',
+        'AnchorSignout',
+        'AnchorGroup',
+        'AnchorGuestShares',
         'apwd',
         'acd',
         'aco',

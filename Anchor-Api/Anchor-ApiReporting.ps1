@@ -16,6 +16,7 @@ Function Get-AnchorActivityTypes {
         [Parameter(HelpMessage='Limits the number of objects to return to the next highest multiple of 100. Default:1000')][int]$RecordCountLimit
         
     )
+    Update-AnchorApiReadiness
     $apiEndpoint = "activity/types"
     try{
         $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
@@ -61,13 +62,16 @@ Function Get-AnchorApiVersion {
     .LINK
     Get-AnchorOauthToken
 #>
+    [CmdletBinding()]
     [Alias('AnchorApi')]
-    #param(
-    #    [Parameter(Mandatory,Position=0)][object]$OauthToken
-    #)
+    param()
+    Write-Verbose "$($MyInvocation.MyCommand) begun at $(Get-Date)"
+    Update-AnchorApiReadiness
+
     $apiEndpoint = "version"
     $results = Get-AnchorData -ApiEndpoint $apiEndPoint -OauthToken $Script:anchorOauthToken
     $results
+    Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
 }
 
 Function Get-AnchorFileMetadata {
@@ -78,6 +82,8 @@ Function Get-AnchorFileMetadata {
         [Parameter(HelpMessage='Include collection of permissions for current user')][switch]$IncludePermissions
     )
     begin{
+        Write-Verbose "$($MyInvocation.MyCommand) begun at $(Get-Date)"
+        Update-AnchorApiReadiness
         $apiQuery = @{
             'include_permissions' = "$(If($IncludePermissions){"true"}Else{"false"})"
         }
@@ -96,6 +102,9 @@ Function Get-AnchorFileMetadata {
         }
         $results
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
+    }
 }
 
 Function Get-AnchorFolderMetadata {
@@ -111,6 +120,8 @@ Function Get-AnchorFolderMetadata {
 
     )
     begin{
+        Write-Verbose "$($MyInvocation.MyCommand) begun at $(Get-Date)"
+        Update-AnchorApiReadiness
         $apiQuery = @{
             'include_children' = "$(If($IncludeChildren){"true"}Else{"false"})"
             'include_deleted' = "$(If($IncludeDeleted){"true"}Else{"false"})"
@@ -132,6 +143,138 @@ Function Get-AnchorFolderMetadata {
             }
         }
         $results
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
+    }
+}
+
+Function Get-AnchorGroup {
+<#
+    .SYNOPSIS
+    Returns a collection of AnchorGroup objects for a given AnchorGroup id or set of id's.
+
+    .DESCRIPTION
+    Returns a collection of AnchorGroup objects.
+    Accepts one or more AnchorGroup id's via argument or a colleciton of AnchorGroup objects from the pipeline.
+
+    .NOTES
+    
+    .PARAMETER id
+    One or more AnchorGroup id's.
+
+    .PARAMETER Expand
+    If TRUE, properties are added to the output object which contain the text value of the company_name.
+
+    .INPUTS
+    A collection of AnchorGroup objects
+
+    .OUTPUTS
+    A collection of AnchorGroup objects
+
+
+    .LINK
+    http://developer.anchorworks.com/v2/#get-a-group
+
+#>
+    [CmdletBinding()]
+    [Alias('AnchorGroup')]
+    param(
+        [Parameter(ParameterSetName='ById',Position=0,ValueFromPipelineByPropertyName)][string[]]$id,
+        [Parameter(HelpMessage='Add names of objects referenced in the returned object')][switch]$Expand
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) begun at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
+    process{
+        # We might have multiple $id values passed via a function parameter . . . and that's okay.
+        ForEach ($groupId in $id){
+            $apiEndpoint = "group/$groupId"
+            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            #Adding a PowerShell-friendly created date field 
+            $myCreatedDate = $results.created
+            $myCreatedPSDate = Get-Date("$myCreatedDate`-00:00")
+            $results | Add-Member -MemberType NoteProperty -Name 'created(local_offset)' -Value $myCreatedPSDate
+            If($Expand){
+                #$myPersonId = $results.creator_id
+                #$myCreator = [string]$(Get-AnchorPerson -id $myPersonId).display_name
+                #$results | Add-Member -MemberType NoteProperty -Name 'creator_name' -Value $myCreator
+                $myCompanyId = $results.company_id
+                $myCompany = [string]$(Get-AnchorOrg -id $myCompanyId).name
+                $results | Add-Member -MemberType NoteProperty -Name 'company_name' -Value $myCompany
+            }
+            $results
+        }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
+    }
+}
+
+Function Get-AnchorGroupMembers {
+# http://developer.anchorworks.com/v2/#list-group-members
+# subscribers are returned in a three-tuple format that is not object-friendly. Need to work on converting this.
+# Accessing the elements of the tuple goes something like this: $results.group_subscribers[0][0]
+# May have to rebuild the entire object from scratch.
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Group ID')][string[]]$id,
+        [Parameter(HelpMessage='Return individual subscribers from groups')][switch]$IncludeFromGroup,
+        [Parameter(HelpMessage='Return expanded output (person and group names)')][switch]$Expand
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiQuery = @{
+            'include_from_group' = "$(If($IncludeFromGroup){"true"}Else{"false"})"
+        }
+    }
+    process{
+        $groupId = $id
+        $apiEndpoint = "group/$groupId/members"
+        $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+        If($expand){
+            $cleanedResults = [pscustomobject]@{}
+            foreach ($property in $results.PSObject.Properties){
+                $myName = $property.Name
+                $myMembers = @()
+                Switch ($property.Name -match 'member_groups'){
+                    $true {
+                        foreach ($node in $property.Value) {
+                            foreach($myId in $node){
+                                Write-Verbose $myId
+                                $myMemberName = (Get-AnchorGroup -id $myId).name
+                                $myMember = [pscustomobject]@{}
+                                $myMember | Add-Member -MemberType NoteProperty -Name 'id' -Value $myId
+                                $myMember | Add-Member -MemberType NoteProperty -Name 'display_name' -Value $myMemberName
+                                $myMembers += $myMember
+                            }
+                        }
+                    }
+                    $false { 
+                        foreach ($node in $property.Value) {
+                            foreach($myId in $node){
+                                Write-Verbose $myId
+                                $myMemberName = (Get-AnchorPerson -id $myId).display_name
+                                $myMember = [pscustomobject]@{}
+                                $myMember | Add-Member -MemberType NoteProperty -Name 'id' -Value $myId
+                                $myMember | Add-Member -MemberType NoteProperty -Name 'display_name' -Value $myMemberName
+                                $myMembers += $myMember
+                            }
+                        }
+                    }
+                }
+                $cleanedResults | Add-Member -MemberType NoteProperty -Name $myName -Value $myMembers
+            }
+            $cleanedResults
+        }
+        Else{
+            $results
+        }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
 
@@ -177,6 +320,10 @@ Function Get-AnchorGuest {
         [Parameter(ParameterSetName='ByEmail',Position=1,HelpMessage='Accept email address instead of person id.')][switch]$ByEmail,
         [Parameter(HelpMessage='Add names of objects referenced in the returned object')][switch]$Expand
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) begun at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         # We might have multiple $id values passed via a function parameter . . . and that's okay.
         If($ByEmail){
@@ -209,8 +356,73 @@ Function Get-AnchorGuest {
             }
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
+    }
 }
 
+Function Get-AnchorGuestFileShares {
+<#
+    .SYNOPSIS
+    Returns a collection of AnchorFileShare objects for a given AnchorGuest id or set of id's.
+
+    .DESCRIPTION
+    Returns a collection of AnchorFileShare objects.
+    Accepts one or more AnchorGuest id's via argument or a colleciton of AnchorGuest objects from the pipeline.
+
+    .NOTES
+    
+    .PARAMETER id
+    One or more AnchorGuest id's.
+
+    .PARAMETER Expand
+    If TRUE, properties are added to the output object which contain the text value of the creator_name.
+
+    .INPUTS
+    A collection of AnchorGuest objects
+
+    .OUTPUTS
+    A collection of AnchorFileShare objects
+
+
+    .LINK
+    http://developer.anchorworks.com/v2/#get-files-and-folders-shared-with-a-guest
+
+#>
+    [CmdletBinding()]
+    [Alias('AnchorGuestShares')]
+    param(
+        [Parameter(ParameterSetName='ById',Position=0,ValueFromPipelineByPropertyName)][string[]]$id,
+        [Parameter(HelpMessage='Add names of objects referenced in the returned object')][switch]$Expand
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) begun at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
+    process{
+        # We might have multiple $id values passed via a function parameter . . . and that's okay.
+        ForEach ($guestId in $id){
+            $apiEndpoint = "guest/$guestId"
+            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            #Adding a PowerShell-friendly created date field 
+            $myCreatedDate = $results.created
+            $myCreatedPSDate = Get-Date("$myCreatedDate`-00:00")
+            $results | Add-Member -MemberType NoteProperty -Name 'created(local_offset)' -Value $myCreatedPSDate
+            If($Expand){
+                $myPersonId = $results.creator_id
+                $myCreator = [string]$(Get-AnchorPerson -id $myPersonId).display_name
+                $results | Add-Member -MemberType NoteProperty -Name 'creator_name' -Value $myCreator
+                $myCompanyId = $results.company_id
+                $myCompany = [string]$(Get-AnchorOrg -id $myCompanyId).name
+                $results | Add-Member -MemberType NoteProperty -Name 'company_name' -Value $myCompany
+            }
+            $results
+        }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
+    }
+}
 
 Function Get-AnchorOrg {
 <#
@@ -339,6 +551,8 @@ Function Get-AnchorOrg {
         [Parameter(ParameterSetName='FindTop',Mandatory=$true,Position=0,HelpMessage='Get the top-level organization for this user.')][switch]$Top
     )
     begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
         If($Top){
             $anchorUser = Get-AnchorPerson -Me
             $id = $anchorUser.company_id
@@ -351,6 +565,9 @@ Function Get-AnchorOrg {
             $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
             $results
         }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
 
@@ -369,6 +586,8 @@ Function Get-AnchorOrgActivity {
     #   It might be nice to add the activity names to the resulting object.
     #   To do this, we're ging to put all the activity id's and names into a hash table.
     begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
         $activityTypes = Get-AnchorActivityTypes | Select-Object id, activity
         $activityTypesHash = @{}
         $activityTypes | ForEach-Object {
@@ -394,6 +613,9 @@ Function Get-AnchorOrgActivity {
             $results
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
 }
 
 Function Get-AnchorOrgAuthSources {
@@ -406,6 +628,10 @@ Function Get-AnchorOrgAuthSources {
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
         
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/auth_sources"
@@ -423,6 +649,9 @@ Function Get-AnchorOrgAuthSources {
             $results
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
 }
 
 Function Get-AnchorOrgChildren {
@@ -432,6 +661,10 @@ Function Get-AnchorOrgChildren {
     param(
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         #There may be multiple $id values passed by the function -id parameter
         foreach ($orgId in $id){
@@ -440,8 +673,10 @@ Function Get-AnchorOrgChildren {
             $results
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
 }
-
 
 Function Get-AnchorOrgMachines {
 <#
@@ -562,6 +797,10 @@ Function Get-AnchorOrgMachines {
         [Parameter(ValueFromPipelineByPropertyName,Mandatory=$true,Position=0,HelpMessage='Organization ID')][string[]]$id,
         [Parameter(Position=1,HelpMessage='Only return machines explicitly in this organization.')][switch]$ExcludeChildren
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         #We might get multiple $id values from the parameter.
         ForEach ($orgId in $id){
@@ -585,8 +824,10 @@ Function Get-AnchorOrgMachines {
             }
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
 }
-
 
 Function Get-AnchorOrgRoots {
     [CmdletBinding()]
@@ -594,6 +835,10 @@ Function Get-AnchorOrgRoots {
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
         
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/roots"
@@ -611,6 +856,9 @@ Function Get-AnchorOrgRoots {
             $results
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
 }
 
 Function Get-AnchorOrgShare {
@@ -623,12 +871,19 @@ Function Get-AnchorOrgShare {
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor Root ID')][string[]]$id
         
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         $orgId = $company_id
         $rootId = $id
         $apiEndpoint = "organization/$orgId/share/$rootId"
         $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
         $results
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
 
@@ -639,12 +894,19 @@ Function Get-AnchorOrgShares {
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
         
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/shares"
             $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
             $results
         }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
 
@@ -661,6 +923,8 @@ Function Get-AnchorOrgShareSubscribers {
         [Parameter(HelpMessage='Return unmodified output (with 3-tuples for subscribers) instead of object-formatted output')][switch]$Raw
     )
     begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
         $apiQuery = @{
             'include_from_group' = "$(If($IncludeFromGroup){"true"}Else{"false"})"
         }
@@ -717,6 +981,9 @@ Function Get-AnchorOrgShareSubscribers {
             # There. I fixed it for you.
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
 }
 
 Function Get-AnchorOrgUsers {
@@ -729,6 +996,10 @@ Function Get-AnchorOrgUsers {
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
         
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/persons"
@@ -746,8 +1017,10 @@ Function Get-AnchorOrgUsers {
             $results
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
 }
-
 
 Function Get-AnchorOrgGuests {
 <#
@@ -759,6 +1032,10 @@ Function Get-AnchorOrgGuests {
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id,
         [Parameter(HelpMessage='Limits the number of objects to return to the next highest multiple of 100. Default:1000')][int]$RecordCountLimit
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/guests"
@@ -776,6 +1053,9 @@ Function Get-AnchorOrgGuests {
             $results
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
 }
 
 Function Get-AnchorOrgGroups {
@@ -788,6 +1068,10 @@ Function Get-AnchorOrgGroups {
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string[]]$id
         
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/groups"
@@ -805,6 +1089,9 @@ Function Get-AnchorOrgGroups {
             $results
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
 }
 
 Function Get-AnchorOrgUsage {
@@ -818,6 +1105,10 @@ Function Get-AnchorOrgUsage {
         [Parameter(HelpMessage='Limits the number of objects to return to the next highest multiple of 100. Default:1000')][int]$RecordCountLimit
         
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/metrics/usage"
@@ -835,6 +1126,9 @@ Function Get-AnchorOrgUsage {
             }
             $results
         }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
 
@@ -880,9 +1174,14 @@ Function Get-AnchorPerson {
         [Parameter(ParameterSetName='ByEmail',Position=1,HelpMessage='Accept email address instead of person id.')][switch]$ByEmail,
         [Parameter(ParameterSetName='Me',Position=0,HelpMessage='Return the person object for the authenticated user.')][switch]$Me
     )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
     process{
         # This endpoint can be called wihout an id to get the data for the currently logged-on person.
         If($Me){
+            Write-Verbose "$($MyInvocation.MyCommand) called with -Me switch."
             $apiEndpoint = "person"
             try{
                 $results =Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
@@ -899,6 +1198,7 @@ Function Get-AnchorPerson {
         }
         # We might have multiple $id values passed via a function parameter . . . and that's okay.
         If($ByEmail){
+            Write-Verbose "$($MyInvocation.MyCommand) called with -ByEmail switch."
             ForEach ($emailAddr in $email){
                 $apiEndpoint = "person/$emailAddr"
                 try{
@@ -932,6 +1232,9 @@ Function Get-AnchorPerson {
             }
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
 }
 
 Function Get-AnchorPersonActivity {
@@ -949,6 +1252,8 @@ Function Get-AnchorPersonActivity {
     #   It might be nice to add the activity names to the resulting object.
     #   To do this, we're ging to put all the activity id's and names into a hash table.
     begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
         $activityTypes = Get-AnchorActivityTypes | Select-Object id, activity
         $activityTypesHash = @{}
         $activityTypes | ForEach-Object {
@@ -974,6 +1279,9 @@ Function Get-AnchorPersonActivity {
             $results
         }
     }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
 }
 
 # Note that the Include switches must be explicitly called, despite the fact that some are on by default in the API.
@@ -985,9 +1293,12 @@ Function Get-AnchorRootMetadata {
         [Parameter(HelpMessage='Include deleted items in child objects')][switch]$IncludeDeleted,
         [Parameter(HelpMessage='Include information about locks')][switch]$IncludeLockInfo,
         [Parameter(HelpMessage='Include collection of permissions for current user')][switch]$IncludePermissions,
-        [Parameter(HelpMessage='Hash value returned from previous call to this endpoint. If hash is identical, return will include root id and a "modified" property with a value of false, indicating that the children have not been modified.')][ValidateLength(40,40)][string]$Hash
+        [Parameter(HelpMessage='Hash value returned from previous call to this endpoint. If hash is identical, return will include root id and a "modified" property with a value of false, indicating that the children have not been modified.')][ValidateLength(40,40)][string]$Hash,
+        [Parameter()][switch]$NoRefreshToken
     )
     begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
         $apiQuery = @{
             'include_children' = "$(If($IncludeChildren){"true"}Else{"false"})"
             'include_deleted' = "$(If($IncludeDeleted){"true"}Else{"false"})"
@@ -1000,7 +1311,7 @@ Function Get-AnchorRootMetadata {
         foreach ($rootId in $id){
             $apiEndpoint = "files/$rootId"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery -NoRefreshToken
             }
             catch{
                 Switch -regex ($Error[0].Exception){
@@ -1010,6 +1321,9 @@ Function Get-AnchorRootMetadata {
             }
             $results
         }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
 
@@ -1021,6 +1335,8 @@ Function Find-RootFilesAndFolders {
         [Parameter(HelpMessage='Search term')][string]$SearchTerm
     )
     begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
         $apiQuery = @{
             'q' = $SearchTerm
         }
@@ -1038,6 +1354,9 @@ Function Find-RootFilesAndFolders {
             }
             $results
         }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
 
@@ -1143,6 +1462,8 @@ Function Get-AnchorRootFilesModifiedSince {
         [Parameter(Mandatory,Position=1,HelpMessage='PowerShell DateTime object indicating the oldest modified file to return')][datetime]$Since
     )
     begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
         $apiQuery = @{'since' = "$(Get-Date($Since) -Format 'yyyy-MM-ddThh:mm:ss')"}
     }
     process{
@@ -1151,6 +1472,9 @@ Function Get-AnchorRootFilesModifiedSince {
             $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
             $results
         }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
 
@@ -1225,9 +1549,14 @@ Function Get-AnchorRootLastModified {
     [CmdletBinding()]
     param(
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor root id')][string[]]$id,
-        [Parameter(Position=1,HelpMessage='Number of threads to use when querying multiple roots. Default = number of processors + 1')][int]$MaxThreads = $env:NUMBER_OF_PROCESSORS + 1
+        [Parameter(ValueFromPipelineByPropertyName,Position=1,HelpMessage='RegEx string or array of Regex strings defining a pattern of root names to ignore')][string[]]$IgnorePath,
+        [Parameter(ValueFromPipelineByPropertyName,Position=2,HelpMessage='Maximum number of days to look back when searching for modified files')][int]$MaxLookback=32,
+        [Parameter(Position=3,HelpMessage='Number of threads to use when querying multiple roots. Default = number of processors + 1')][int]$MaxThreads = $env:NUMBER_OF_PROCESSORS + 1
     )
     begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+        [string]$ignorePathString = $IgnorePath -join '|'
         #region BLOCK 1: Create and open runspace pool, setup runspaces array with min and max threads
         #   Special thanks to Chrissy LeMaire (https://blog.netnerds.net/2016/12/runspaces-simplified/) for helping me to (sort of) understand how to utilize runspaces.
 
@@ -1238,10 +1567,13 @@ Function Get-AnchorRootLastModified {
             'Get-AnchorData',
             'Validate-AnchorOauthToken',
             'Refresh-AnchorOauthToken',
-            'Get-AnchorOauthStatus'
+            'Get-AnchorOauthStatus',
+            'Get-AnchorRootMetadata'
         )
         $bagOfVariables = @(
-            'apiUri'
+            'apiUri',
+            'MaxLookback',
+            'IgnorePath'
         )
 
         $InitialSessionState = [initialsessionstate]::CreateDefault() #CreateDefault is important. If we just use Create, it creates a blank-slate session that has almost no functionality.
@@ -1264,6 +1596,7 @@ Function Get-AnchorRootLastModified {
         # End Hoops
 
         # Now back to our regularly scheduled runspace pool creation
+        Write-Verbose "Creating runspace pool with $MaxThreads concurrent threads."
         $pool = [RunspaceFactory]::CreateRunspacePool(1,$MaxThreads,$InitialSessionState,$Host)
         $pool.ApartmentState = "MTA"
         $pool.Open()
@@ -1275,26 +1608,53 @@ Function Get-AnchorRootLastModified {
         $scriptblock = {
             Param (
                 [string]$rootId,
-                [object]$OauthToken
+                [object]$OauthToken,
+                [string]$IgnorePathString,
+                [int]$MaxLookback
             )
-            $apiEndpoint = "files/$rootId/modified_since"
-            [int]$lookBackDays = -1 #Initialize
-            [datetime]$now = Get-Date
-            Do{
-                [datetime]$mySince = $now.AddDays($lookBackDays)
-                $apiQuery = @{'since' = "$(Get-Date($mySince) -Format 'yyyy-MM-ddThh:mm:ss')"}
-                
-                try {
-                    $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery -NoRefreshToken #Adding NoRefreshToken, because it doesn't work within a runspace.
-                } catch {
-                    [PSCustomObject]@{'id' = "$rootId";'modified'='api_error'}
-                    $halt = $true
+            $Script:anchorOauthToken = $OauthToken
+            # First, let's see if we can ignore this root.
+            $root = Get-AnchorRootMetadata -id $rootId -NoRefreshToken
+            If($IgnorePathString -and ($root.name -match $ignorePathString)){$ignoreByPath=$true}
+            If($root.space_used -eq 0){$ignoreByEmpty=$true}
+            If($false){$ignoreByRootId=$true} #placeholder for later feature
+            If($ignoreByPath -or $ignoreByEmpty -or $ignoreByRootId){
+                If($ignoreByPath){
+                    [PSCustomObject]@{id = $rootId;modified='ignored_by_name'; 'lookback_days'=$null;itterations=0}
                 }
-                $results | Sort-Object -Property modified -Descending | Select-Object root_id, modified -First 1 | Add-Member -MemberType AliasProperty -Name id -Value root_id -PassThru | Select-Object id, modified
-                $lookBackDays = $lookBackDays * 2
-            }Until($results -or ($lookBackDays -lt -2048) -or $halt) # Let's not get carried away. 5.6 years ought to be enough! Also, remember, we're counting backward.
-            If ($lookBackDays -lt -2048){
-                [PSCustomObject]@{'id' = "$rootId";'modified'='no_files_found'}
+                ElseIf($ignoreByEmpty){
+                    [PSCustomObject]@{id = $rootId;modified='empty_root'; 'lookback_days'=$null;itterations=0}
+                }
+            }
+            Else{
+
+                $apiEndpoint = "files/$rootId/modified_since"
+                #$lookBackDays = -1 #Initialize
+                #We want to start with a number that's less than or equal to 1 day and end up on the exact number specified in the function call.
+                $lookBackDays = -($MaxLookback) #Don't forget, we need to use negative numbers                
+                While($lookBackDays -lt -1){
+                    $lookBackDays = $lookBackDays / 2
+                }
+                [datetime]$now = Get-Date
+                [int]$i=0
+                Do{
+                    $i++
+                    [datetime]$mySince = $now.AddDays($lookBackDays)
+                    $apiQuery = @{'since' = "$(Get-Date($mySince) -Format 'yyyy-MM-ddThh:mm:ss')"}
+                
+                    try {
+                        $results = Get-AnchorData -OauthToken $OauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery -NoRefreshToken #Adding NoRefreshToken, because it doesn't work within a runspace.
+                    } catch {
+                        [PSCustomObject]@{id = $rootId;modified='api_error';lookback_days = $lookBackDays;itterations=$i}
+                        $halt = $true
+                    }
+                    #Return the results here.
+                    $results | Sort-Object -Property modified -Descending | Select-Object root_id, modified -First 1 | Add-Member -MemberType AliasProperty -Name id -Value root_id -PassThru | Select-Object id, modified | Add-Member -MemberType NoteProperty -Name 'lookback_days' -Value $lookBackDays -PassThru | Add-Member -MemberType NoteProperty -Name 'itterations' -Value $i -PassThru
+                    $lookBackDays = $lookBackDays * 2
+                }Until($results -or ($lookBackDays -lt -($MaxLookback)) -or $halt) # Remember, we're counting backward.
+                If (!$results -and !$halt){
+                    [PSCustomObject]@{id = $rootId;modified='no_modified_files'; 'lookback_days'=($lookBackDays/2);itterations=$i}
+                }
             }
         }
         #endregion
@@ -1302,7 +1662,7 @@ Function Get-AnchorRootLastModified {
     process{
         foreach ($rootId in $id){
             #region BLOCK 3: Create runspace and add to runspace pool
-            $runspaceParams = @{'rootId'="$rootId";'OauthToken'=$Script:anchorOauthToken}
+            $runspaceParams = @{'rootId'="$rootId";'OauthToken'=$Script:anchorOauthToken; 'IgnorePathString'=$ignorePathString; 'MaxLookback'=$MaxLookback}
             $runspace = [PowerShell]::Create()
             $null = $runspace.AddScript($scriptblock)
             $null = $runspace.AddParameters($runspaceParams)
@@ -1313,25 +1673,34 @@ Function Get-AnchorRootLastModified {
             # Asynchronously runs the commands of the PowerShell object pipeline
             $runspaces += [PSCustomObject]@{ Pipe = $runspace; Status = $runspace.BeginInvoke() }
             #endregion
-
         }
     }
     end{
         #region BLOCK 5: Wait for runspaces to finish
+        Write-Verbose "Created $($runspaces.Count) PowerShell runspaces. Awaiting completion of all runspaces."
         while ($runspaces.Status -ne $null){
             $completed = $runspaces | Where-Object { $_.Status.IsCompleted -eq $true }
+
+            #Monitor
+            $notCompleted = $runspaces | Where-Object { $_.Status.IsCompleted -eq $false }
+            [int]$notCompletedCount = $notCompleted.Count
+            Write-Progress -Activity "Roots remaining to analyze (out of $($runspaces.Count))..." -Status $($notCompletedCount) -PercentComplete (($notCompletedCount / $runspaces.Count) * 100) -ErrorAction SilentlyContinue
+            #End Monitor
+
             foreach ($runspace in $completed)
             {
                 $runspace.Pipe.EndInvoke($runspace.Status)
                 $runspace.Status = $null
             }
         }
+        Write-Verbose "All runspaces complete."
         #endregion
 
         #region BLOCK 6: Clean up
         $pool.Close() 
         $pool.Dispose()
         #endregion
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
 
@@ -1344,6 +1713,8 @@ Function Get-AnchorMachineBackups {
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor machine id')][string[]]$id
     )
     begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
         #region BLOCK 1: Create and open runspace pool, setup runspaces array with min and max threads
         #   Special thanks to Chrissy LeMaire (https://blog.netnerds.net/2016/12/runspaces-simplified/) for helping me to (sort of) understand how to utilize runspaces.
 
@@ -1417,6 +1788,10 @@ Function Get-AnchorMachineBackups {
         #region BLOCK 5: Wait for runspaces to finish
         while ($runspaces.Status -ne $null){
             $completed = $runspaces | Where-Object { $_.Status.IsCompleted -eq $true }
+            #Monitor
+            $notCompleted = $runspaces | Where-Object { $_.Status.IsCompleted -eq $false }
+            [int]$notCompletedCount = $notCompleted.Count
+            Write-Progress -Activity "Roots remaining to analyze (out of $($runspaces.Count))..." -Status $($notCompletedCount) -PercentComplete (($notCompletedCount / $runspaces.Count) * 100) -ErrorAction SilentlyContinue
             foreach ($runspace in $completed)
             {
                 $runspace.Pipe.EndInvoke($runspace.Status)
@@ -1429,6 +1804,7 @@ Function Get-AnchorMachineBackups {
         $pool.Close() 
         $pool.Dispose()
         #endregion
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
 
@@ -1439,6 +1815,7 @@ Function Get-AnchorMachineBackups {
 #   The function handles pagination, so there is no need to pass the offset in the query hashtable.
 # The OauthToken is an object, returned from the Oauth function.
 Function Get-AnchorData {
+    #[CmdletBinding()]
     param(
         [Parameter(Mandatory,Position=0)][AllowNull()][object]$OauthToken,
         [Parameter(Mandatory,Position=1)][string]$ApiEndpoint, 
@@ -1446,14 +1823,17 @@ Function Get-AnchorData {
         [Parameter(HelpMessage='Limits the number of results returned. Will be the next highest multiple of 100.')][int]$ResultsLimit=1000,
         [Parameter()][switch]$NoRefreshToken
     )
-    Validate-AnchorOauthToken -OauthToken $OauthToken -NoRefresh $NoRefreshToken #Check to make sure the Oauth token is valid and refresh if needed.
+    Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+    #Validate-AnchorOauthToken -OauthToken $OauthToken -NoRefresh $NoRefreshToken #Check to make sure the Oauth token is valid and refresh if needed.
     
     $tokenType = $OauthToken.token_type
     $accessToken = $OauthToken.access_token
     $headers = @{'Authorization' = "$tokenType $accessToken"}
     $body = $ApiQuery
     #try{
+        Write-Verbose "Invoke-RestMethod for $Global:apiUri`/$ApiEndpoint begin at $(Get-Date)"
         $results = Invoke-RestMethod -Uri "$Global:apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $body
+        Write-Verbose "Invoke-RestMethod for $Global:apiUri`/$ApiEndpoint complete at $(Get-Date)"
     #}
     #catch{
     #    Switch ($Error[0].Exception){
@@ -1476,6 +1856,8 @@ Function Get-AnchorData {
     } Else { #This is an object (or empty). We can just return the results.
         $results
     }
+    Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+
 }
 
 #region DEPRECATED FUNCTIONS

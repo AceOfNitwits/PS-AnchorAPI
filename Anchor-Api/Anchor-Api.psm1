@@ -1,2 +1,2 @@
 ﻿# Base API URI
-[string]$Global:apiUri = "https://clocktowertech.syncedtool.com/api/2"
+[string]$Global:apiUri = "https://syncedtool.com/api/2"
