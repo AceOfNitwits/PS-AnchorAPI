@@ -52,9 +52,9 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✅ Get a machine                                        
 
-⬜ Get a machine mapping                                
+✅ Get-AnchorMachineFseMap (Get a machine mapping)
 
-✅ Get a machine's status                               
+✅ Get-AnchorMachineStatus (Get a machine's status)
 
 ✅ Get-AnchorPerson (Get a person)
 
