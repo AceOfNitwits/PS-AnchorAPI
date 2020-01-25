@@ -58,7 +58,9 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✅ Get-AnchorPerson (Get a person)
 
-⬜ Get a root                                           
+✅ Get-AnchorOrgRoot (Get a root)
+
+   This call requires both a company_id and a root_id. Not sure why you would want to use this over getting the root metadata, which only requires a root_id.
 
 ✅ Get-AnchorOrgShare (Get a share)
 
@@ -99,13 +101,17 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✅ Get-AnchorMachineBackups (List backups)
 
-⬜ List files on a file server enabled machine          
+❗ Get-AnchorMachineFseFiles (List files on a file server enabled machine)
+
+   This API call seems to be non-functional.
 
 ✅ Get-AnchorGroupMembers (List group members)
    
    The API returns only the id's of member persons and groups. This function includes the `-Expand` option, to include group and person names in the results.
 
-⬜ List mapped paths on a file server enabled machine   
+✅ List mapped paths on a file server enabled machine
+
+   Includes `-Expand` property
 
 ✅ Get-AnchorPersonActivity (List recent activity for a person)
 
