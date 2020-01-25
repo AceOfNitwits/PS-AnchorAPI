@@ -101,7 +101,9 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ⬜ List files on a file server enabled machine          
 
-⬜ List group members                                   
+✅ Get-AnchorGroupMembers (List group members)
+   
+   The API returns only the id's of member persons and groups. This function includes the `-Expand` option, to include group and person names in the results.
 
 ⬜ List mapped paths on a file server enabled machine   
 
