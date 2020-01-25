@@ -68,7 +68,10 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✅ Get-AnchorFileMetadata (Get file metadata)
 
-⬜ Get files and folders shared with a guest            
+✅ Get-AnchorGuestFileShares (Get files and folders shared with a guest)
+   
+   Returned object includes a `created(local_offset)` field that is a valid PowerShell DateTime object with the correct local offset. This is convenient not only because it displays in local time, but because it can be used in PowerShell DateTime commands without additional conversion from a string or worrying about the time zone.
+   Optional `-Expand` parameter looks up the creator_name from the creator_id and adds it to the returned object.
 
 ✅ Get-AnchorFolderMetadata (Get folder metadata)
 
