@@ -50,7 +50,7 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✅ Get-AnchorActivityTypes (Get a list of activity types)
 
-⬜ Get a machine                                        
+✅ Get a machine                                        
 
 ⬜ Get a machine mapping                                
 
