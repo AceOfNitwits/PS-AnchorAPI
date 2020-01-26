@@ -7,6 +7,8 @@
 
 #endregion
 
+# General Functions
+
 Function Get-AnchorActivityTypes {
 <#
     .LINK
@@ -31,7 +33,6 @@ Function Get-AnchorActivityTypes {
     }
     $results
 }
-
 
 Function Get-AnchorApiVersion {
 <#
@@ -73,6 +74,96 @@ Function Get-AnchorApiVersion {
     $results
     Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
 }
+
+# Activity Functions
+
+Function Get-AnchorActivity {
+<#
+    .SYNOPSIS
+    Returns a collection of AnchorActivity objects for a given activity_id or set of id's.
+
+    .DESCRIPTION
+    Returns one or more AnchorActivity objects.
+    Accepts one or more AnchorActivity id's via argument or a colleciton of AnchorActivity objects from the pipeline.
+
+    .NOTES
+    
+    .PARAMETER id
+    One or more AnchorActivity id's.
+
+    .INPUTS
+    A collection of AnchorActivity objects
+
+    .OUTPUTS
+    A collection of AnchorActivity objects.
+
+    .LINK
+    http://developer.anchorworks.com/v2/#get-an-activity-record
+
+#>
+    [CmdletBinding()]
+    [Alias('AnchorActivity')]
+    param(
+        [Parameter(Position=0,ValueFromPipelineByPropertyName)][string[]]$id,
+        [Parameter(Position=1)][switch]$Expand
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) begun at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiQuery = @{
+        }
+    }
+    process{
+        # We might have multiple $id values passed via a function parameter . . . and that's okay.
+        ForEach ($activityId in $id){
+            # Get the expanded data we can get before calling the Api
+            If($Expand){}
+            $apiEndpoint = "activity/$activityId"
+            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
+            # Process Results
+            $results
+            If($results){
+                $classedResults = [pscustomobject]@()
+                $results | ForEach-Object {
+                    # Get the rest of the expanded results
+                    If($Expand){
+                        $myActorOrg = Get-AnchorOrg -id $_.actor_company_id
+                        $myActorMachine = Get-AnchorMachine -id $_.actor_machine_id
+                        #$myActorPerson = Get-AnchorPerson -id $_.actor_person_id
+                        $myActorGuest = Get-AnchorGuest -id $_.actor_guest_id
+                        $myOrg = Get-AnchorOrg -id $_.acted_on_company_id
+                        $myMachine = Get-AnchorMachine -id $_.acted_on_machine_id
+                        $myPerson = Get-AnchorPerson -id $_.acted_on_person_id
+                        $myGuest = Get-AnchorGuest -id $_.acted_on_guest_id
+                        $myRoot = Get-AnchorRootMetadata -id $_.acted_on_root_id
+                        $myGroup = Get-AnchorGroup -id $_.acted_on_group_id
+                    }
+                    $classedObject = [AnchorActivity]$_
+                    $classedObject.actor_company_name = $myActorOrg.name
+                    $classedObject.actor_machine_name = $myActorMachine.dns_name
+                    #$classedObject.actor_person_name = $myActorPerson.display_name
+                    $classedObject.actor_guest_email = $myActorGuest.email
+                    $classedObject.acted_on_company_name = $myOrg.name
+                    $classedObject.acted_on_machine_name = $myMachine.dns_name
+                    $classedObject.acted_on_person_name = $myPerson.display_name
+                    $classedObject.acted_on_guest_email = $myGuest.email
+                    $classedObject.acted_on_root_name = $myRoot.name
+                    $classedObject.acted_on_group_name = $myGroup.name
+                    $classedObject.created_ps_local = [datetime]$(Get-Date("$($_.created)Z"))
+                    $classedObject.api_exception = $false
+                    $classedObject.queried_on = (Get-Date)
+                    $classedResults+=$classedObject
+                }
+                $classedResults
+            }
+        }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
+    }
+}
+
+# File and Folder Functions
 
 Function Get-AnchorFileMetadata {
     [CmdletBinding()]
@@ -148,6 +239,8 @@ Function Get-AnchorFolderMetadata {
         Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
     }
 }
+
+# Group Functions
 
 Function Get-AnchorGroup {
 <#
@@ -277,6 +370,8 @@ Function Get-AnchorGroupMembers {
         Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
+
+# Guest Functions
 
 Function Get-AnchorGuest {
 <#
@@ -424,6 +519,8 @@ Function Get-AnchorGuestFileShares {
     }
 }
 
+# Machine Functions
+
 Function Get-AnchorMachine {
 <#
     .SYNOPSIS
@@ -481,25 +578,76 @@ Function Get-AnchorMachine {
     }
 }
 
-Function Convert-UtcDateStringToLocalDateTime{
+Function Get-AnchorMachineBackup {
+<#
+    .SYNOPSIS
+    Returns a collection of AnchorBackup objects for a given AnchorMachine id and AnchorRoot id.
+
+    .DESCRIPTION
+    Returns one or more AnchorBackup objects.
+    Accepts one AnchorMachine id and one AnchorRoot id via argument or a colleciton of machine_id, root_id pairs from the pipeline.
+
+    .NOTES
+    
+    .PARAMETER machine_id
+    One or more AnchorMachine id's.
+
+    .PARAMETER root_id
+    One or more AnchorRoot id's.
+
+    .INPUTS
+    A collection of machine_id, root_id value pairs.
+
+    .OUTPUTS
+    A collection of AnchorBackup objects.
+
+    .LINK
+    http://developer.anchorworks.com/v2/#get-a-backup
+
+#>
     [CmdletBinding()]
-    [Alias('UtcToLocal')]
+    [Alias('AnchorMachineBackup')]
     param(
-        [Parameter(ValueFromPipeline,Mandatory,Position=0)]
-        [AllowEmptyString()]
-        [AllowNull()]
-        [string[]]$dateString
+        [Parameter(Position=0,ValueFromPipelineByPropertyName)][int]$machine_id,
+        [Parameter(Position=1,ValueFromPipelineByPropertyName)][int]$root_id,
+        [Parameter(Position=2)][switch]$Expand
     )
     begin{
-        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Write-Verbose "$($MyInvocation.MyCommand) begun at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiQuery = @{
+        }
     }
     process{
-        #$dateString | ForEach-Object {
-            If($dateString){Get-Date("$dateString`-00:00")}
-        #}
+        # Get the expanded data we can get before calling the Api
+        If($Expand){
+            $myMachine = Get-AnchorMachine -id $machine_id
+            $myMachineName = $myMachine.dns_name
+            $myRoot = Get-AnchorRootMetadata -id $root_id
+            $myRootName = $myRoot.name
+        }
+        $apiEndpoint = "machine/$machine_id/backup/$root_id"
+        $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
+        # Process Results
+        If($results){
+            $classedResults = [pscustomobject]@()
+            $results | ForEach-Object {
+                # Get the rest of the expanded results
+                If($Expand){}
+
+                $classedObject = [AnchorBackup]$_
+                $classedObject.machine_name = $myMachineName
+                $classedObject.root_name = $myRootName
+                $classedObject.root_data = $myRoot
+                $classedObject.api_exception = $false
+                $classedObject.queried_on = (Get-Date)
+                $classedResults+=$classedObject
+            }
+            $classedResults
+        }
     }
     end{
-        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+        Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
     }
 }
 
@@ -607,6 +755,231 @@ Function Get-AnchorMachineBackups {
     }
 }
 
+Function Get-AnchorMachineFseFiles {
+<#
+    .SYNOPSIS
+    Returns a collection of file paths for a given AnchorMachine id or set of id's.
+
+    .DESCRIPTION
+    Returns one or more file paths objects.
+    Accepts one or more AnchorMachine id's via argument or a colleciton of AnchorMachine objects from the pipeline.
+
+    .NOTES
+    This API call doesn't seem to work properly.
+    
+    .PARAMETER id
+    One or more AnchorMachine id's.
+
+    .PARAMETER path
+    The local (to the machine) path to enumerate.
+    If not specified, local drives are enumerated.
+
+    .PARAMETER username
+    The username if path is a network path and requires authentication. Default none.
+
+    .PARAMETER password
+    The password if path is a network path and requires authentication. Default none.
+    *** CAUTION ***
+    Storing this parameter value in a script will reduce security and may violate security compliance policies.
+
+    .INPUTS
+    A collection of AnchorMachine objects
+
+    .OUTPUTS
+    A collection of file paths.
+
+    .LINK
+    http://developer.anchorworks.com/v2/#list-files-on-a-file-server-enabled-machine
+
+#>
+    [CmdletBinding()]
+    [Alias('AnchorFseFiles')]
+    param(
+        [Parameter(Position=0,ValueFromPipelineByPropertyName)][string[]]$id,
+        [Parameter(Position=1)][string]$path,
+        [Parameter(Position=1)][string]$username,
+        [Parameter(Position=1)][string]$password
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) begun at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiQuery = @{
+            'path' = "$path"
+            'username' = "$username"
+            'password' = "$password"
+        }
+    }
+    process{
+        # We might have multiple $id values passed via a function parameter . . . and that's okay.
+        ForEach ($machineId in $id){
+            $apiEndpoint = "machine/$machineId/ls"
+            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint -ApiQuery $apiQuery
+            # If there are no results, we don't want to return an empty object with just the organization property populated.
+            If($results){
+                # If more than one object is returned, we have to itterate.
+                #$results | ForEach-Object {
+                #    $_ | Add-Member -MemberType NoteProperty -Name 'last_login(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.last_login)
+                #    $_ | Add-Member -MemberType NoteProperty -Name 'created(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.created)
+                #    $_ | Add-Member -MemberType NoteProperty -Name 'last_disconnect(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.last_disconnect)
+                #    $_ | Add-Member -MemberType NoteProperty -Name 'company_id' -Value $orgId
+                #}
+                $results
+            }
+        }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
+    }
+}
+
+Function Get-AnchorMachineFseMap {
+<#
+    .SYNOPSIS
+    Returns a collection of AnchorMachineMap objects for a given AnchorMachine id or set of id's.
+
+    .DESCRIPTION
+    Returns one or more AnchorMachineMap objects.
+    Accepts one or more AnchorMachine id's via argument or a colleciton of AnchorMachineMap objects from the pipeline.
+
+    .NOTES
+    
+    .PARAMETER id
+    One or more AnchorMachine id's.
+
+    .INPUTS
+    A collection of AnchorMachine objects
+
+    .OUTPUTS
+    A collection of AnchorMachineMap objects.
+
+    .LINK
+    http://developer.anchorworks.com/v2/#get-a-machine-mapping
+
+#>
+    [CmdletBinding()]
+    [Alias('AnchorFseMap')]
+    param(
+        [Parameter(Position=0,ValueFromPipelineByPropertyName)][int]$machine_id,
+        [Parameter(Position=1,ValueFromPipelineByPropertyName)][int]$mapping_id,
+        [Parameter(Position=2)][switch]$Expand
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) begun at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiQuery = @{
+        }
+    }
+    process{
+        # Get the expanded data we can get before calling the Api
+        If($Expand){
+            $myMachine = Get-AnchorMachine -id $machine_id
+            $myMachineName = $myMachine.dns_name
+        }
+        $apiEndpoint = "machine/$machine_id/mapping/$mapping_id"
+        $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
+        # Process Results
+        If($results){
+            $classedResults = [pscustomobject]@()
+            $results | ForEach-Object {
+                # Get the rest of the expanded results
+                If($Expand){
+                    $myRoot = Get-AnchorRootMetadata -id $_.root_id
+                    $myRootName = $myRoot.name
+                    $myPerson = Get-AnchorPerson -id $_.person_id
+                    $myPersonName = $myPerson.display_name
+                }
+                $classedObject = [AnchorFseMap]$_
+                $classedObject.machine_name = $myMachineName
+                $classedObject.person_display_name = $myPersonName
+                $classedObject.root_name = $myRootName
+                $classedObject.root_data = $myRoot
+                $classedObject.api_exception = $false
+                $classedObject.queried_on = (Get-Date)
+                $classedResults+=$classedObject
+            }
+            $classedResults
+        }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
+    }
+}
+
+Function Get-AnchorMachineFseMaps {
+<#
+    .SYNOPSIS
+    Returns a collection of AnchorMachineMap objects for a given AnchorMachine id or set of id's.
+
+    .DESCRIPTION
+    Returns one or more AnchorMachineMap objects.
+    Accepts one or more AnchorMachine id's via argument or a colleciton of AnchorMachineMap objects from the pipeline.
+
+    .NOTES
+    
+    .PARAMETER id
+    One or more AnchorMachine id's.
+
+    .INPUTS
+    A collection of AnchorMachine objects
+
+    .OUTPUTS
+    A collection of AnchorMachineMap objects.
+
+    .LINK
+    http://developer.anchorworks.com/v2/#list-mapped-paths-on-a-file-server-enabled-machine
+
+#>
+    [CmdletBinding()]
+    [Alias('AnchorFseMaps')]
+    param(
+        [Parameter(Position=0,ValueFromPipelineByPropertyName)][string[]]$id,
+        [Parameter(Position=1)][switch]$Expand
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) begun at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiQuery = @{
+        }
+    }
+    process{
+        # We might have multiple $id values passed via a function parameter . . . and that's okay.
+        ForEach ($machineId in $id){
+            # Get the expanded data we can get before calling the Api
+            If($Expand){
+                $myMachine = Get-AnchorMachine -id $machineId
+                $myMachineName = $myMachine.dns_name
+            }
+            $apiEndpoint = "machine/$machineId/mappings"
+            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
+            # If there are no results, we don't want to return an empty object with just the organization property populated.
+            If($results){
+                $classedResults = [pscustomobject]@()
+                $results | ForEach-Object {
+                    # Get the rest of the expanded results
+                    If($Expand){
+                        $myRoot = Get-AnchorRootMetadata -id $_.root_id
+                        $myRootName = $myRoot.name
+                        $myPerson = Get-AnchorPerson -id $_.person_id
+                        $myPersonName = $myPerson.display_name
+                    }
+                    $classedObject = [AnchorFseMap]$_
+                    $classedObject.machine_name = $myMachineName
+                    $classedObject.person_display_name = $myPersonName
+                    $classedObject.root_name = $myRootName
+                    $classedObject.root_data = $myRoot
+                    $classedObject.api_exception = $false
+                    $classedObject.queried_on = (Get-Date)
+                    $classedResults+=$classedObject
+                }
+                $classedResults
+            }
+        }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
+    }
+}
+
 Function Get-AnchorMachineStatus {
 <#
     .SYNOPSIS
@@ -680,6 +1053,8 @@ Function Get-AnchorMachineStatus {
         Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
     }
 }
+
+# Organization (Company) functions
 
 Function Get-AnchorOrg {
 <#
@@ -804,7 +1179,7 @@ Function Get-AnchorOrg {
     [CmdletBinding()]
     [Alias('AnchorOrg')]
     param(
-        [Parameter(ParameterSetName='Standard',Mandatory=$true,Position=0,ValueFromPipelineByPropertyName)][string[]]$id,
+        [Parameter(ParameterSetName='Standard',Mandatory=$true,Position=0,ValueFromPipelineByPropertyName)][AllowNull()][string[]]$id,
         [Parameter(ParameterSetName='FindTop',Mandatory=$true,Position=0,HelpMessage='Get the top-level organization for this user.')][switch]$Top
     )
     begin{
@@ -1099,6 +1474,43 @@ Function Get-AnchorOrgMachines {
                 }
             }
         }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
+}
+
+Function Get-AnchorOrgRoot {
+<#
+    .NOTES
+    I'm not sure when this API call is useful. It's easier and more flexible to just get a root by ID, rather than having to specify a company_id as well.
+
+    .LINKS
+    http://developer.anchorworks.com/v2/#get-a-root
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Organization ID')][string]$company_id,
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=1,HelpMessage='Valid Anchor Root ID')][string]$root_id        
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
+    process{
+        $apiEndpoint = "organization/$company_id/root/$root_id"
+        try{
+            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+        }
+        catch{
+            $exception = $_.Exception
+            Switch ($exception.Response.StatusCode.value__){
+                403 {$results=[pscustomobject]@{exception='unauthorized'}}
+                404 {$results=[pscustomobject]@{exception='nonexistent_id'}}
+                default {$results = $exception}
+            }
+        }
+        $results
     }
     end{
         Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
@@ -1408,6 +1820,8 @@ Function Get-AnchorOrgUsage {
     }
 }
 
+# Person Functions
+
 Function Get-AnchorPerson {
 <#
     .SYNOPSIS
@@ -1560,8 +1974,14 @@ Function Get-AnchorPersonActivity {
     }
 }
 
-# Note that the Include switches must be explicitly called, despite the fact that some are on by default in the API.
+# Root Functions
+
 Function Get-AnchorRootMetadata {
+<#
+    .NOTES
+    The -Include* switches must be explicitly called, despite the fact that some are on by default in the API.
+
+#>
     [CmdletBinding()]
     param(
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Root ID')][string[]]$id, 
@@ -1603,8 +2023,11 @@ Function Get-AnchorRootMetadata {
     }
 }
 
-#http://developer.anchorworks.com/v2/#search-files-and-folders
 Function Find-RootFilesAndFolders {
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#search-files-and-folders
+#>
     [CmdletBinding()]
     param(
         [Parameter(ValueFromPipelineByPropertyName,Mandatory,Position=0,HelpMessage='Valid Anchor Root ID')][string[]]$id, 
@@ -1754,10 +2177,6 @@ Function Get-AnchorRootFilesModifiedSince {
     }
 }
 
-# Accepts one or more Anchor root IDs or objects containing a parameter named "id" with values of root IDs
-# Returns the DateTime of the last time any file in the root was modified (within the last 5.6 years).
-# We do multiple checks, looking back 1 day, 2 days, 4 days, and so on until 2048.
-#   The API times out if there's no result in about 5 minutes, so this can potentially take a long time, especially if there are roots with large numbers of files.
 Function Get-AnchorRootLastModified {
 <#
     .SYNOPSIS
@@ -1980,12 +2399,36 @@ Function Get-AnchorRootLastModified {
     }
 }
 
+# Helper Functions
+
+Function Convert-UtcDateStringToLocalDateTime{
+    [CmdletBinding()]
+    [Alias('UtcToLocal')]
+    param(
+        [Parameter(ValueFromPipeline,Mandatory,Position=0)]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [string[]]$dateString
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+    }
+    process{
+        #$dateString | ForEach-Object {
+            If($dateString){Get-Date("$dateString`-00:00")}
+        #}
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
+}
+
+Function Get-AnchorData {
 # Generic function for returning data from an Anchor API endpoint.
 # The full uri of the endpoint is passed as a string.
 # The query (if needed) is passed as a hash table. This is the information that will be sent in the Body.
 #   The function handles pagination, so there is no need to pass the offset in the query hashtable.
 # The OauthToken is an object, returned from the Oauth function.
-Function Get-AnchorData {
     #[CmdletBinding()]
     param(
         [Parameter(Mandatory,Position=0)][AllowNull()][object]$OauthToken,

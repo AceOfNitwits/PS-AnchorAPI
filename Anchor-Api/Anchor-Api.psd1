@@ -9,11 +9,11 @@
         '.\Anchor-ApiNav.ps1'
     )
     FunctionsToExport = @(
-        'Convert-UtcDateStringToLocalDateTime', #Remove after testing
         'Request-AnchorAuthorization',
         'Revoke-AnchorAuthorization',
         'Request-AnchorAuthorizationRefresh',
         'Find-RootFilesAndFolders',
+        'Get-AnchorActivity',
         'Get-AnchorActivityTypes',
         'Get-AnchorApiVersion',
         'Get-AnchorFolderMetadata',
@@ -23,7 +23,11 @@
         'Get-AnchorGuest',
         'Get-AnchorGuestFileShares',
         'Get-AnchorMachine',
+        'Get-AnchorMachineBackup',
         'Get-AnchorMachineBackups',
+        'Get-AnchorMachineFseFiles',
+        'Get-AnchorMachineFseMap',
+        'Get-AnchorMachineFseMaps',
         'Get-AnchorMachineStatus',
         'Get-AnchorOauthState',
         'Get-AnchorOauthToken',
@@ -35,6 +39,7 @@
         'Get-AnchorOrgGroups',
         'Get-AnchorOrgGuests',
         'Get-AnchorOrgMachines',
+        'Get-AnchorOrgRoot',
         'Get-AnchorOrgRoots',
         'Get-AnchorOrgShare',
         'Get-AnchorOrgShares',
@@ -58,9 +63,12 @@
         'Set-AnchorNavFolder',
         'Save-AnchorNavFile'
     )
-    CmdletsToExport = @()
+    CmdletsToExport = @(
+        'ApiData',
+        'AnchorFseMap',
+        'AnchorRoot'
+    )
     AliasesToExport = @(
-        'UtcToLocal', # Remove after testing.
         'AnchorLogin',
         'AnchorLogon',
         'AnchorSignin',
