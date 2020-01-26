@@ -40,7 +40,7 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ## Reporting functions 🐇
 
-⬜ Get a backup                                         
+✅ Get-AnchorMachineBackup (Get a backup)                      
 
 ✅ Get a group                                          
 
@@ -64,7 +64,7 @@ Look at Anchor-BackupCheck.ps1 for examples.
 
 ✅ Get-AnchorOrgShare (Get a share)
 
-⬜ Get an activity record                               
+✅ Get-AnchorActivity (Get an activity record)
 
 ✅ Get-AnchorOrg (Get an organization)
 
