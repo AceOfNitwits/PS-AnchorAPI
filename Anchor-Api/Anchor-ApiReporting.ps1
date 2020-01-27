@@ -1435,7 +1435,7 @@ Function Get-AnchorOrgMachines {
         [Parameter(ValueFromPipelineByPropertyName,Mandatory=$true,Position=0,HelpMessage='Organization ID')][string[]]$id,
         [Parameter(Position=1,HelpMessage='Only return machines explicitly in this organization.')][switch]$ExcludeChildren,
         [Parameter(Position=2,HelpMessage='Also return machines that have logged on via the API.')][switch]$IncludeApiMachines,
-        [Parameter(HelpMessage='Maximum number of API queries to run at once.')][int]$MaxThreads=[int]$($env:NUMBER_OF_PROCESSORS + 1)
+        [Parameter(HelpMessage='Maximum number of API queries to run at once.')][int]$MaxThreads=[int]$([int]$env:NUMBER_OF_PROCESSORS + 1)
     )
     begin{
         Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
@@ -1473,6 +1473,7 @@ Function Get-AnchorOrgMachines {
                 $_ | Add-Member -MemberType NoteProperty -Name 'last_login(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.last_login)
                 $_ | Add-Member -MemberType NoteProperty -Name 'created(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.created)
                 $_ | Add-Member -MemberType NoteProperty -Name 'last_disconnect(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.last_disconnect)
+                # The following no longer works because the results are all returned at once, and we don't know which org was called.
                 $_ | Add-Member -MemberType NoteProperty -Name 'company_id' -Value $orgId
             }
             If($IncludeApiMachines){
@@ -2561,9 +2562,9 @@ Function Invoke-AnchorApiGet { #New one!
                 Else{
                     $additionalCallCount = $neededCallCount - 1 #We've already called it once.
                 }
-                $body+=@{'offset' = '0'} #Because we're going to need to increment the offset, and we didn't have an offset as part of the query to begin, we have to add a zero-value offset before we can increment it.
-                for ($offset=100; $offset -le $additionalCallCount; $offset+=100){
-                    $body.offset = "$offset" # Update the offset value for the next Api call.
+                $ApiQuery+=@{'offset' = '0'} #Because we're going to need to increment the offset, and we didn't have an offset as part of the query to begin, we have to add a zero-value offset before we can increment it.
+                for ($offset=100; $offset -le (100 * $additionalCallCount); $offset+=100){
+                    $ApiQuery.offset = "$offset" # Update the offset value for the next Api call.
                     Write-Verbose "Invoke-RestMethod for $apiUri`/$ApiEndpoint begin at $(Get-Date)"
                     $results = Invoke-RestMethod -Uri "$apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $ApiQuery
                     $results.results # Return the next batch of results.
