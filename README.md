@@ -4,7 +4,7 @@ PowerShell module for managing Axcient Anchor via the v2 API
 🌟 ***Now with filesystem navigation*** (see below)
 
 This module is designed to manage and administer all aspects of the Anchor system that are available through the API.
-Functions should be PS-friendly, returning objects and accepting pipeline input where possible, including collections of objects.
+Functions should be PS-friendly, returning objects and accepting pipeline input where possible, including collections of objects, which allows for creation/modification/deletion of Anchor objects in bulk.
 
 # Usage
 
@@ -279,7 +279,11 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ### Person (Account) functions
 
-⬜ Create a person                                      
+✅ New-AnchorPerson (Create a person)
+
+   Accepts command line, pipeline, or CSV input for bulk additions.
+   
+   Still need to figure out how to add more than one group and root.
 
 ⬜ Update a person                                      
 
