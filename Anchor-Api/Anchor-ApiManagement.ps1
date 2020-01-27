@@ -126,7 +126,8 @@ Function New-AnchorPerson {
         [Parameter(ParameterSetName='commandLine',ValueFromPipelineByPropertyName,Position=18)][switch]$quota_90,
         [Parameter(ParameterSetName='commandLine',ValueFromPipelineByPropertyName,Position=19)][switch]$quota_95,
         [Parameter(ParameterSetName='commandLine',ValueFromPipelineByPropertyName,Position=20)][switch]$quota_100,
-        [Parameter(ParameterSetName='commandLine',ValueFromPipelineByPropertyName,Position=21)][switch]$send_welcome_email
+        [Parameter(ParameterSetName='commandLine',ValueFromPipelineByPropertyName,Position=21)][switch]$send_welcome_email,
+        [Parameter(HelpMessage='If set, all actions are automatically confirmed without user input.')]$Confirm
     )
     begin{
         Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
@@ -179,11 +180,26 @@ Function New-AnchorPerson {
         }
     }
     end{
-        [AnchorPerson[]]$results = $apiCalls | Invoke-AnchorApiPost
-        If($results){
-            $results.GeneratePwLastChangedPsLocal()
-            $results.company_name = (Get-AnchorOrg -id $($results.company_id)).name
-            $results
+        # Confirmation
+        If($Confirm){
+            $confirmation='Y'
+        }
+        Else {
+            Write-Host "You are about to attempt to create the following user accounts:"
+            $apiCalls | ForEach-Object {Write-Host $($_.ApiQuery | out-string)}
+            $confirmation = Read-Host "Confirm: [Y]es, [N]o (Default: No)"
+        }
+        # End Confirmation
+        If($confirmation -eq 'Y'){
+            [AnchorPerson[]]$results = $apiCalls | Invoke-AnchorApiPost
+            If($results){
+                $results.GeneratePwLastChangedPsLocal()
+                $results.company_name = (Get-AnchorOrg -id $($results.company_id)).name
+                $results
+            }
+        }
+        Else {
+            Write-Host 'Action canceled. No accounts created.'
         }
         Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }

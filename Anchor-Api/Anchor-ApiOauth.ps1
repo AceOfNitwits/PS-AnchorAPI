@@ -35,7 +35,7 @@ Function Connect-AnchorApiSession{
         # 🧹 Cleanup
         [Runtime.InteropServices.Marshal]::FreeBSTR($PasswordBstr)
     }
-    [AnchorOauth]$Script:anchorOauthToken = New-AnchorOauthToken -Username $Username -Password $Password
+    [AnchorOauth]$Global:anchorOauthToken = New-AnchorOauthToken -Username $Username -Password $Password
 }
 
 Function Update-AnchorApiSession{
