@@ -1,9 +1,7 @@
 # PowerShell Anchor-Api Module
 PowerShell module for managing Axcient Anchor via the v2 API
 
-🌟 ***Now with filesystem navigation*** (see below)
-
-This module is designed to manage and administer all aspects of the Anchor system that are available through the API.
+This module is designed to administer and automate all aspects of the Anchor system that are available through the API.
 Functions should be PS-friendly, returning objects and accepting pipeline input where possible, including collections of objects, which allows for creation/modification/deletion of Anchor objects in bulk.
 
 # Usage
@@ -301,9 +299,9 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ⬜ Upload a file to a root
 
-## Navigation functions 📁
+## Navigation functions 📁🧪
 
-Yes. You can navigate the Anchor file system from the PowerShell command line! It's not a PSDrive. It's kind of like FTP.
+Yes. You can navigate the Anchor file system from the PowerShell command line! It's not a PSDrive. It's kind of like FTP. Ultimately, not all that practical, but an interesting distraction.
 
 ✅ apwd
 
