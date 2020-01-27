@@ -17,30 +17,40 @@ Function Set-AnchorOauthUri{
     If($newUri){$oauthUri=$newUri}
 }
 
-Function Request-AnchorAuthorization{
+Function Connect-AnchorApiSession{
+    [CmdletBinding()]
     [Alias('AnchorLogin')]
     [Alias('AnchorLogon')]
     [Alias('AnchorSignin')]
     param(
-        [Parameter(Position=0)][string]$Username, 
-        [Parameter(Position=1)][string]$Password
+        [Parameter(ParameterSetName='up',Position=0)][string]$Username, 
+        [Parameter(ParameterSetName='up',Position=1)][string]$Password,
+        [Parameter(ValueFromPipeline)][PSCredential]$InputObject
     )
-    $Script:anchorOauthToken = New-AnchorOauthToken -Username $Username -Password $Password
+    If($InputObject){
+        $Username = $InputObject.UserName
+        # Extracting the password from a PSCredential object is a two-step process.
+        $PasswordBstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($InputObject.Password)
+        $Password = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($PasswordBstr)
+        # 🧹 Cleanup
+        [Runtime.InteropServices.Marshal]::FreeBSTR($PasswordBstr)
+    }
+    [AnchorOauth]$Script:anchorOauthToken = New-AnchorOauthToken -Username $Username -Password $Password
 }
 
-Function Request-AnchorAuthorizationRefresh{
+Function Update-AnchorApiSession{
     [Alias('AnchorRefresh')]
     param()
-    Refresh-AnchorOauthToken -CurrentToken $Script:anchorOauthToken
+    Refresh-AnchorOauthToken -CurrentToken $Global:anchorOauthToken
 }
 
-Function Revoke-AnchorAuthorization {
+Function Disconnect-AnchorApiSession {
     [Alias('AnchorLogout')]
     [Alias('AnchorLogoff')]
     [Alias('AnchorSignout')]
     param()
-    Revoke-AnchorOauthToken -oauthToken $Script:anchorOauthToken -tokenType access_token
-    Revoke-AnchorOauthToken -oauthToken $Script:anchorOauthToken -tokenType refresh_token
+    Revoke-AnchorOauthToken -oauthToken $Global:anchorOauthToken -tokenType access_token
+    Revoke-AnchorOauthToken -oauthToken $Global:anchorOauthToken -tokenType refresh_token
     Remove-Variable -Name 'anchorOauthToken' -Scope 'Script'
 }
 
@@ -60,7 +70,7 @@ Function Revoke-AnchorOauthToken{
 }
 
 Function Get-AnchorOauthToken{
-    $Script:anchorOauthToken
+    $Global:anchorOauthToken
 }
 
 Function Set-AnchorOauthToken{
@@ -70,7 +80,7 @@ Function Set-AnchorOauthToken{
     )
     If($InputObject){
         Write-Host "Oauth token set. Token will expire on $($InputObject.expires_on)`." -BackgroundColor Black -ForegroundColor Green
-        $Script:anchorOauthToken = $InputObject
+        $Global:anchorOauthToken = $InputObject
         Update-AnchorApiReadiness
     }
     Else{
@@ -86,6 +96,7 @@ Function New-AnchorOauthToken{
 param([string]$Username, [string]$Password)
     $grantType = "password"
     $clientId = "anchor"
+    [AnchorOauth]$oauthToken = @{}
     Do {
         If (-not ($Username -and $Password)){
             $credentials = Get-Credential -UserName $Username -Message "Anchor Credentials"
@@ -125,29 +136,32 @@ param([string]$Username, [string]$Password)
         $refreshWindow = $oauthToken.expires_in
         [datetime]$oauthExpiry = (Get-Date).AddSeconds($refreshWindow)
         [datetime]$oauthRefresh = (Get-Date).AddSeconds($refreshWindow / 2)
-        $oauthToken | Select-Object *, @{N='expires_on';E={$oauthExpiry}}, @{N='refresh_after';E={$oauthRefresh}}
+        $oauthToken.expires_on=$oauthExpiry
+        $oauthToken.refresh_after=$oauthRefresh
+        $oauthToken #Return the token.
+        #$oauthToken | Select-Object *, @{N='expires_on';E={$oauthExpiry}}, @{N='refresh_after';E={$oauthRefresh}}
 
         Write-Host "Oauth token obtained. New token will expire on $($oauthExpiry)`." -BackgroundColor Black -ForegroundColor Green
-        Write-Host "Best practice: use Revoke-AnchorAuthorization (AnchorLogoff) when finished to revoke the Oauth token from the server."
+        Write-Host "Best practice: use Disconnect-AnchorApiSession (AnchorLogoff) when finished to revoke the Oauth token from the server." -ForegroundColor DarkYellow
     }
     Else {
         Write-Host "Oauth token not obtained!" -BackgroundColor Black -ForegroundColor Red
     }
-    #$Script:anchorOauthToken
+    #$Global:anchorOauthToken
 }
 
 Function Get-AnchorOAuthState{
     Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
-    If($Script:anchorOauthToken){
-        $expiryTimespan = New-TimeSpan -Start (Get-Date) -End $Script:anchorOauthToken.expires_on
-        $refreshTimespan = New-TimeSpan -Start (Get-Date) -End $Script:anchorOauthToken.refresh_after
+    If($Global:anchorOauthToken.access_token){
+        $expiryTimespan = New-TimeSpan -Start (Get-Date) -End $Global:anchorOauthToken.expires_on
+        $refreshTimespan = New-TimeSpan -Start (Get-Date) -End $Global:anchorOauthToken.refresh_after
         $authState = If ($expiryTimespan -gt 0){'valid'}Else{'expired'}
         $refreshState = If ($refreshTimespan -gt 0){'not_suggested'}Else{ If($expiryTimespan -gt 0){'suggested'}Else{'expired'} }
         $state = [pscustomobject]@{}
         $state | Add-Member -MemberType NoteProperty -Name 'auth_token_state' -Value $authState
-        $state | Add-Member -MemberType NoteProperty -Name 'token_expires' -Value $Script:anchorOauthToken.expires_on
+        $state | Add-Member -MemberType NoteProperty -Name 'token_expires' -Value $Global:anchorOauthToken.expires_on
         $state | Add-Member -MemberType NoteProperty -Name 'refresh_suggestion' -Value $refreshState
-        $state | Add-Member -MemberType NoteProperty -Name 'refresh_suggested' -Value $Script:anchorOauthToken.refresh_after
+        $state | Add-Member -MemberType NoteProperty -Name 'refresh_suggested' -Value $Global:anchorOauthToken.refresh_after
     }
     Else{
         $state = [pscustomobject]@{}
@@ -201,7 +215,6 @@ param($OauthToken)
     $status
 }
 
-
 Function Validate-AnchorOauthToken {
     param(
         [AllowNull()][object]$OauthToken, 
@@ -209,13 +222,13 @@ Function Validate-AnchorOauthToken {
         [switch]$NoRefresh
     )
 #    If (!$OauthToken){
-#        $OauthToken = $Script:anchorOauthToken
+#        $OauthToken = $Global:anchorOauthToken
 #    }
     $tokenStatus = Get-AnchorOauthStatus $OauthToken
     Switch ($tokenStatus){
         "empty_token" {
             Write-Host "Not authenticated." -ForegroundColor Red -BackgroundColor Black
-            Request-AnchorAuthorization
+            Connect-AnchorApiSession
             #$OauthToken = New-AnchorOauthToken
             #$OauthToken
         }
@@ -226,7 +239,7 @@ Function Validate-AnchorOauthToken {
         }
         "token_expired" {
             Write-Host "Token Expired. Must Reauthenticate" -ForegroundColor Yellow -BackgroundColor Black
-            Request-AnchorAuthorization
+            Connect-AnchorApiSession
             #$OauthToken = New-AnchorOauthToken            
         }
     }
@@ -240,11 +253,11 @@ Function Update-AnchorApiReadiness{
         'valid'{
             Switch ($oauthState.refresh_suggestion){
                 'not_suggested' {} # Nothing to do here
-                'suggested' {Request-AnchorAuthorizationRefresh}
+                'suggested' {Update-AnchorApiSession}
             }
         }
-        'expired'{Request-AnchorAuthorization}
-        'not_present'{Request-AnchorAuthorization}
+        'expired'{Connect-AnchorApiSession}
+        'not_present'{Connect-AnchorApiSession}
     }
     Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
 }

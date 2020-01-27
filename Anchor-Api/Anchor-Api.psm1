@@ -1,4 +1,17 @@
 ﻿# Classes
+
+Class AnchorOauth{
+    [string]$access_token
+    [int]$expires_in
+    [string]$token_type
+    [string]$scope
+    [guid]$guid
+    [string]$refresh_token
+    [datetime]$expires_on
+    [datetime]$refresh_after
+    [void]Update(){Update-AnchorApiSession}
+}
+
 Class ApiData{
     [int]$status_code
     [string]$tag
@@ -26,6 +39,36 @@ Class AnchorRoot {
     [switch]$api_exception=$false
     [ApiData]$ApiExceptionData = [ApiData]::new()
     [datetime]$queried_on
+}
+
+Class AnchorPerson {
+    [bool]$can_share
+    [int]$company_id
+    [string]$company_name
+    [PSCustomObject]$company_policy
+    [string]$display_name
+    [string]$email
+    [string]$first_name
+    [PSCustomObject]$i18n
+    [int]$id
+    [string]$last_name
+    [string]$locale
+    [bool]$pw_force_reset
+    [string]$pw_last_changed
+    [datetime]$pw_last_changed_ps_local
+    [Object[]]$roots
+    [int]$root_id
+    [bool]$site_admin
+    [long]$space_quota
+    [string]$space_quota_formatted
+    [long]$space_usage
+    [string]$space_usage_formatted
+    [bool]$system_admin
+    [string]$timezone
+    [string]$type
+    [string]$username
+    Hidden [void]GeneratePwLastChangedPsLocal(){$this.pw_last_changed_ps_local = [string]$(Get-Date("$($this.pw_last_changed)`Z"))}
+    [void]PopulateCompanyName(){$this.company_name = (Get-AnchorOrg -id ($this.company_id)).name}
 }
 
 Class AnchorFseMap {

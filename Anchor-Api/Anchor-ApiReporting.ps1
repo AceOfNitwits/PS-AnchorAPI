@@ -15,13 +15,14 @@ Function Get-AnchorActivityTypes {
     http://developer.anchorworks.com/v2/#get-a-list-of-activity-types
 #>
     param(
-        [Parameter(HelpMessage='Limits the number of objects to return to the next highest multiple of 100. Default:1000')][int]$RecordCountLimit
+        #[Parameter(HelpMessage='Limits the number of objects to return to the next highest multiple of 100. Default:1000')][int]$RecordCountLimit
         
     )
     Update-AnchorApiReadiness
     $apiEndpoint = "activity/types"
     try{
-        $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
+        Invoke-AnchorApiGet -ApiEndpoint 'activity/types'
+        #$results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
     }
     catch{
         $exception = $_.Exception
@@ -31,7 +32,7 @@ Function Get-AnchorActivityTypes {
             default {$results = $exception}
         }
     }
-    $results
+    #$results
 }
 
 Function Get-AnchorApiVersion {
@@ -70,8 +71,7 @@ Function Get-AnchorApiVersion {
     Update-AnchorApiReadiness
 
     $apiEndpoint = "version"
-    $results = Get-AnchorData -ApiEndpoint $apiEndPoint -OauthToken $Script:anchorOauthToken
-    $results
+    Invoke-AnchorApiGet -ApiEndpoint 'version'
     Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
 }
 
@@ -119,7 +119,7 @@ Function Get-AnchorActivity {
             # Get the expanded data we can get before calling the Api
             If($Expand){}
             $apiEndpoint = "activity/$activityId"
-            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
             # Process Results
             $results
             If($results){
@@ -184,7 +184,7 @@ Function Get-AnchorFileMetadata {
         $fileId = $id
         $apiEndpoint = "files/$rootId/$fileId"
         try{
-            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
         }
         catch{
             Switch -regex ($Error[0].Exception){
@@ -226,7 +226,7 @@ Function Get-AnchorFolderMetadata {
         $folderId = $id
         $apiEndpoint = "files/$rootId/folder/$folderId"
         try{
-            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
         }
         catch{
             Switch -regex ($Error[0].Exception){
@@ -284,7 +284,7 @@ Function Get-AnchorGroup {
         # We might have multiple $id values passed via a function parameter . . . and that's okay.
         ForEach ($groupId in $id){
             $apiEndpoint = "group/$groupId"
-            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
             #Adding a PowerShell-friendly created date field 
             $myCreatedDate = $results.created
             $myCreatedPSDate = Get-Date("$myCreatedDate`-00:00")
@@ -326,7 +326,7 @@ Function Get-AnchorGroupMembers {
     process{
         $groupId = $id
         $apiEndpoint = "group/$groupId/members"
-        $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+        $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
         If($expand){
             $cleanedResults = [pscustomobject]@{}
             foreach ($property in $results.PSObject.Properties){
@@ -424,7 +424,7 @@ Function Get-AnchorGuest {
         If($ByEmail){
             ForEach ($emailAddr in $email){
                 $apiEndpoint = "guest/$emailAddr"
-                $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
                 If($Expand){
                     $myOrgId = $results.company_id
                     $myPersonId = $results.creator_id
@@ -438,7 +438,7 @@ Function Get-AnchorGuest {
         } Else {
             ForEach ($guestId in $id){
                 $apiEndpoint = "guest/$guestId"
-                $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
                 If($Expand){
                     $myOrgId = $results.company_id
                     $myPersonId = $results.creator_id
@@ -498,7 +498,7 @@ Function Get-AnchorGuestFileShares {
         # We might have multiple $id values passed via a function parameter . . . and that's okay.
         ForEach ($guestId in $id){
             $apiEndpoint = "guest/$guestId"
-            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
             #Adding a PowerShell-friendly created date field 
             $myCreatedDate = $results.created
             $myCreatedPSDate = Get-Date("$myCreatedDate`-00:00")
@@ -559,7 +559,7 @@ Function Get-AnchorMachine {
         # We might have multiple $id values passed via a function parameter . . . and that's okay.
         ForEach ($machineId in $id){
             $apiEndpoint = "machine/$machineId"
-            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
             # If there are no results, we don't want to return an empty object with just the organization property populated.
             If($results){
                 # If more than one object is returned, we have to itterate.
@@ -627,7 +627,7 @@ Function Get-AnchorMachineBackup {
             $myRootName = $myRoot.name
         }
         $apiEndpoint = "machine/$machine_id/backup/$root_id"
-        $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
+        $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
         # Process Results
         If($results){
             $classedResults = [pscustomobject]@()
@@ -718,7 +718,7 @@ Function Get-AnchorMachineBackups {
     process{
         foreach ($machineId in $id){
             #region BLOCK 3: Create runspace and add to runspace pool
-            $runspaceParams = @{'machineId'="$machineId";'OauthToken'=$Script:anchorOauthToken}
+            $runspaceParams = @{'machineId'="$machineId";'OauthToken'=$Global:anchorOauthToken}
             $runspace = [PowerShell]::Create()
             $null = $runspace.AddScript($scriptblock)
             $null = $runspace.AddParameters($runspaceParams)
@@ -813,7 +813,7 @@ Function Get-AnchorMachineFseFiles {
         # We might have multiple $id values passed via a function parameter . . . and that's okay.
         ForEach ($machineId in $id){
             $apiEndpoint = "machine/$machineId/ls"
-            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint -ApiQuery $apiQuery
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint -ApiQuery $apiQuery
             # If there are no results, we don't want to return an empty object with just the organization property populated.
             If($results){
                 # If more than one object is returned, we have to itterate.
@@ -876,7 +876,7 @@ Function Get-AnchorMachineFseMap {
             $myMachineName = $myMachine.dns_name
         }
         $apiEndpoint = "machine/$machine_id/mapping/$mapping_id"
-        $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
+        $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
         # Process Results
         If($results){
             $classedResults = [pscustomobject]@()
@@ -950,7 +950,7 @@ Function Get-AnchorMachineFseMaps {
                 $myMachineName = $myMachine.dns_name
             }
             $apiEndpoint = "machine/$machineId/mappings"
-            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint #-ApiQuery $apiQuery
             # If there are no results, we don't want to return an empty object with just the organization property populated.
             If($results){
                 $classedResults = [pscustomobject]@()
@@ -1019,7 +1019,7 @@ Function Get-AnchorMachineStatus {
         ForEach ($machineId in $id){
             $apiEndpoint = "machine/$machineId/status"
             try{
-                $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
                 $exceptionResults = $null
             }
             catch{
@@ -1194,7 +1194,7 @@ Function Get-AnchorOrg {
         # We might have multiple $id values passed via a function parameter . . . and that's okay.
         ForEach ($orgId in $id){
             $apiEndpoint = "organization/$orgId"
-            $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
             $results
         }
     }
@@ -1231,7 +1231,7 @@ Function Get-AnchorOrgActivity {
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/activity"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
                 $results = $results | Select-Object *, @{N='activity';E={$activityTypesHash[$_.activity_type_id]}}
             }
             catch{
@@ -1268,7 +1268,7 @@ Function Get-AnchorOrgAuthSources {
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/auth_sources"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint
             }
             catch{
                 $exception = $_.Exception
@@ -1301,7 +1301,7 @@ Function Get-AnchorOrgChildren {
         #There may be multiple $id values passed by the function -id parameter
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$orgId/organizations"
-            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndPoint
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
             $results
         }
     }
@@ -1434,48 +1434,54 @@ Function Get-AnchorOrgMachines {
     param(
         [Parameter(ValueFromPipelineByPropertyName,Mandatory=$true,Position=0,HelpMessage='Organization ID')][string[]]$id,
         [Parameter(Position=1,HelpMessage='Only return machines explicitly in this organization.')][switch]$ExcludeChildren,
-        [Parameter(Position=2,HelpMessage='Return machines that have logged on via the API.')][switch]$IncludeApiMachines
+        [Parameter(Position=2,HelpMessage='Also return machines that have logged on via the API.')][switch]$IncludeApiMachines,
+        [Parameter(HelpMessage='Maximum number of API queries to run at once.')][int]$MaxThreads=[int]$($env:NUMBER_OF_PROCESSORS + 1)
     )
     begin{
         Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
         Update-AnchorApiReadiness
+        $apiCalls=@()
     }
     process{
+        # Create the array of API calls to make.
         #We might get multiple $id values from the parameter.
         ForEach ($orgId in $id){
             $apiEndpoint = "organization/$($orgId)/machines"
-            $myMachines = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndPoint
-            If($ExcludeChildren){
-                $childOrgs = Get-AnchorOrgChildren -id $orgId
-                If($childOrgs){
-                    $childOrgMachines = $childOrgs | Get-AnchorOrgMachines #-IncludeApiMachines $IncludeApiMachines
-                    $exclusiveMachines = Compare-Object $myMachines $childOrgMachines -Property id -PassThru | Where-Object SideIndicator -eq "<="
-                    $results = $exclusiveMachines
-                } else { # This org has no children, so we can just return the original list.
-                    $results = $myMachines
-                }
-            } else {
-                $results = $myMachines
-            }
-            # If there are no results, we don't want to return an empty object with just the organization property populated.
-            If($results){
-                # If more than one object is returned, we have to itterate.
-                $results | ForEach-Object {
-                    $_ | Add-Member -MemberType NoteProperty -Name 'last_login(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.last_login)
-                    $_ | Add-Member -MemberType NoteProperty -Name 'created(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.created)
-                    $_ | Add-Member -MemberType NoteProperty -Name 'last_disconnect(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.last_disconnect)
-                    $_ | Add-Member -MemberType NoteProperty -Name 'company_id' -Value $orgId
-                }
-                If($IncludeApiMachines){
-                    $results
-                }
-                Else{
-                    $results | Where-Object {-not ($_.agent_version -eq $null -and $_.machine_type -eq 'agent' -and $_.os_type -eq $null)}
-                }
-            }
+            $apiQuery = @{}
+            $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
+            $apiCalls += $apiCall
         }
     }
     end{
+        $myMachines = $apiCalls | Invoke-AnchorApiGet -MaxThreads $MaxThreads
+        If($ExcludeChildren){
+            $childOrgs = Get-AnchorOrgChildren -id $orgId
+            If($childOrgs){
+                $childOrgMachines = $childOrgs | Get-AnchorOrgMachines #-IncludeApiMachines $IncludeApiMachines
+                $exclusiveMachines = Compare-Object $myMachines $childOrgMachines -Property id -PassThru | Where-Object SideIndicator -eq "<="
+                $results = $exclusiveMachines
+            } else { # This org has no children, so we can just return the original list.
+                $results = $myMachines
+            }
+        } else {
+            $results = $myMachines
+        }
+        # If there are no results, we don't want to return an empty object with just the organization property populated.
+        If($results){
+            # If more than one object is returned, we have to itterate.
+            $results | ForEach-Object {
+                $_ | Add-Member -MemberType NoteProperty -Name 'last_login(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.last_login)
+                $_ | Add-Member -MemberType NoteProperty -Name 'created(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.created)
+                $_ | Add-Member -MemberType NoteProperty -Name 'last_disconnect(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.last_disconnect)
+                $_ | Add-Member -MemberType NoteProperty -Name 'company_id' -Value $orgId
+            }
+            If($IncludeApiMachines){
+                $results
+            }
+            Else{
+                $results | Where-Object {-not ($_.agent_version -eq $null -and $_.machine_type -eq 'agent' -and $_.os_type -eq $null)}
+            }
+        }
         Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
@@ -1500,7 +1506,7 @@ Function Get-AnchorOrgRoot {
     process{
         $apiEndpoint = "organization/$company_id/root/$root_id"
         try{
-            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint
         }
         catch{
             $exception = $_.Exception
@@ -1531,7 +1537,7 @@ Function Get-AnchorOrgRoots {
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/roots"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint
             }
             catch{
                 $exception = $_.Exception
@@ -1567,7 +1573,7 @@ Function Get-AnchorOrgShare {
         $orgId = $company_id
         $rootId = $id
         $apiEndpoint = "organization/$orgId/share/$rootId"
-        $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+        $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint
         $results
     }
     end{
@@ -1589,7 +1595,7 @@ Function Get-AnchorOrgShares {
     process{
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/shares"
-            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint
             $results
         }
     }
@@ -1621,7 +1627,7 @@ Function Get-AnchorOrgShareSubscribers {
         $orgId = $company_id
         $rootId = $id
         $apiEndpoint = "organization/$orgId/share/$rootId/subscribers"
-        $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+        $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
         If($Raw){ # I'm sorry I ever made this option.
             $results
         }
@@ -1692,7 +1698,7 @@ Function Get-AnchorOrgUsers {
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/persons"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint
             }
             catch{
                 $exception = $_.Exception
@@ -1728,7 +1734,7 @@ Function Get-AnchorOrgGuests {
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/guests"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
             }
             catch{
                 $exception = $_.Exception
@@ -1764,7 +1770,7 @@ Function Get-AnchorOrgGroups {
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/groups"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint
             }
             catch{
                 $exception = $_.Exception
@@ -1801,7 +1807,7 @@ Function Get-AnchorOrgUsage {
         foreach ($orgId in $id){
             $apiEndpoint = "organization/$OrgId/metrics/usage"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
                 $results = $results | Select-Object *, @{N='activity';E={$activityTypesHash[$_.activity_type_id]}}
             }
             catch{
@@ -1874,7 +1880,7 @@ Function Get-AnchorPerson {
             Write-Verbose "$($MyInvocation.MyCommand) called with -Me switch."
             $apiEndpoint = "person"
             try{
-                $results =Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+                $results =Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
             }
             catch{
                 $exception = $_.Exception
@@ -1892,7 +1898,7 @@ Function Get-AnchorPerson {
             ForEach ($emailAddr in $email){
                 $apiEndpoint = "person/$emailAddr"
                 try{
-                    $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+                    $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
                 }
                 catch{
                     $exception = $_.Exception
@@ -1908,7 +1914,7 @@ Function Get-AnchorPerson {
             ForEach ($personId in $id){
                 $apiEndpoint = "person/$personId"
                 try{
-                    $results = Get-AnchorData -OauthToken $script:anchorOauthToken -ApiEndpoint $apiEndPoint
+                    $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
                 }
                 catch{
                     $exception = $_.Exception
@@ -1955,7 +1961,7 @@ Function Get-AnchorPersonActivity {
         foreach ($personId in $id){
             $apiEndpoint = "person/$personId/activity"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ResultsLimit $RecordCountLimit
                 $results = $results | Select-Object *, @{N='activity';E={$activityTypesHash[$_.activity_type_id]}}
             }
             catch{
@@ -2007,7 +2013,7 @@ Function Get-AnchorRootMetadata {
         foreach ($rootId in $id){
             $apiEndpoint = "files/$rootId"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery -NoRefreshToken
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery -NoRefreshToken
             }
             catch{
                 Switch -regex ($Error[0].Exception){
@@ -2044,7 +2050,7 @@ Function Find-RootFilesAndFolders {
         foreach ($rootId in $id){
             $apiEndpoint = "files/$rootId/search"
             try{
-                $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+                $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
             }
             catch{
                 Switch -regex ($Error[0].Exception){
@@ -2058,7 +2064,6 @@ Function Find-RootFilesAndFolders {
         Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
 }
-
 
 Function Get-AnchorRootFilesModifiedSince {
 <#
@@ -2168,7 +2173,7 @@ Function Get-AnchorRootFilesModifiedSince {
     process{
         foreach ($rootId in $id){
             $apiEndpoint = "files/$rootId/modified_since"
-            $results = Get-AnchorData -OauthToken $Script:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
+            $results = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndpoint -ApiQuery $apiQuery
             $results
         }
     }
@@ -2307,7 +2312,7 @@ Function Get-AnchorRootLastModified {
                 [string]$IgnorePathString,
                 [int]$MaxLookback
             )
-            $Script:anchorOauthToken = $OauthToken
+            $Global:anchorOauthToken = $OauthToken
             # First, let's see if we can ignore this root.
             $root = Get-AnchorRootMetadata -id $rootId -NoRefreshToken
             If($IgnorePathString -and ($root.name -match $ignorePathString)){$ignoreByPath=$true}
@@ -2357,7 +2362,7 @@ Function Get-AnchorRootLastModified {
     process{
         foreach ($rootId in $id){
             #region BLOCK 3: Create runspace and add to runspace pool
-            $runspaceParams = @{'rootId'="$rootId";'OauthToken'=$Script:anchorOauthToken; 'IgnorePathString'=$ignorePathString; 'MaxLookback'=$MaxLookback}
+            $runspaceParams = @{'rootId'="$rootId";'OauthToken'=$Global:anchorOauthToken; 'IgnorePathString'=$ignorePathString; 'MaxLookback'=$MaxLookback}
             $runspace = [PowerShell]::Create()
             $null = $runspace.AddScript($scriptblock)
             $null = $runspace.AddParameters($runspaceParams)
@@ -2424,12 +2429,13 @@ Function Convert-UtcDateStringToLocalDateTime{
 }
 
 Function Get-AnchorData {
+<#
 # Generic function for returning data from an Anchor API endpoint.
 # The full uri of the endpoint is passed as a string.
 # The query (if needed) is passed as a hash table. This is the information that will be sent in the Body.
 #   The function handles pagination, so there is no need to pass the offset in the query hashtable.
 # The OauthToken is an object, returned from the Oauth function.
-    #[CmdletBinding()]
+#>
     param(
         [Parameter(Mandatory,Position=0)][AllowNull()][object]$OauthToken,
         [Parameter(Mandatory,Position=1)][string]$ApiEndpoint, 
@@ -2438,22 +2444,16 @@ Function Get-AnchorData {
         [Parameter()][switch]$NoRefreshToken
     )
     Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
-    #Validate-AnchorOauthToken -OauthToken $OauthToken -NoRefresh $NoRefreshToken #Check to make sure the Oauth token is valid and refresh if needed.
     
     $tokenType = $OauthToken.token_type
     $accessToken = $OauthToken.access_token
     $headers = @{'Authorization' = "$tokenType $accessToken"}
     $body = $ApiQuery
-    #try{
-        Write-Verbose "Invoke-RestMethod for $Global:apiUri`/$ApiEndpoint begin at $(Get-Date)"
-        $results = Invoke-RestMethod -Uri "$Global:apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $body
-        Write-Verbose "Invoke-RestMethod for $Global:apiUri`/$ApiEndpoint complete at $(Get-Date)"
-    #}
-    #catch{
-    #    Switch ($Error[0].Exception){
-    #        default {$results = $Error[0].Exception}
-    #    }
-    #}
+
+    Write-Verbose "Invoke-RestMethod for $Global:apiUri`/$ApiEndpoint begin at $(Get-Date)"
+    $results = Invoke-RestMethod -Uri "$Global:apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $body
+    Write-Verbose "Invoke-RestMethod for $Global:apiUri`/$ApiEndpoint complete at $(Get-Date)"
+
     If ($results.PSobject.Properties.name -eq "results") { # The returned object contains a property named "results" and is therefore a collection. We have to do some magic to extract all the data. 
         $results.results # Return the first set of results.
         $resultsCount = $results.results.count
@@ -2474,7 +2474,323 @@ Function Get-AnchorData {
 
 }
 
+Function Invoke-AnchorApiGet { #New one!
+<#
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(ParameterSetName='byPipeline',ValueFromPipeline)]$InputObject,
+        [Parameter(ParameterSetName='byParameter',Mandatory,Position=0)][string]$ApiEndpoint, 
+        [Parameter(ParameterSetName='byParameter',Position=1)][hashtable]$ApiQuery,
+        [Parameter(HelpMessage='Limits the number of times an endpoint will be queried.')][int]$PageLimit,
+        [Parameter()][int]$MaxThreads=([int]$env:NUMBER_OF_PROCESSORS + 1)
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        #Stuff that will be the same for all requests...
+        $tokenType = $Global:anchorOauthToken.token_type
+        $accessToken = $Global:anchorOauthToken.access_token
+        $headers = @{'Authorization' = "$tokenType $accessToken"}
+        If(!$InputObject){$InputObject = @{'ApiEndpoint'=$ApiEndpoint;'ApiQuery'=$ApiQuery}}
+
+        #region BLOCK 1: Create and open runspace pool, setup runspaces array with min and max threads
+        #   Special thanks to Chrissy LeMaire (https://blog.netnerds.net/2016/12/runspaces-simplified/) for helping me to (sort of) understand how to utilize runspaces.
+
+        # Custom functions are not available to runspaces. 🤦‍
+        # We need to import some custom functions and script variables into the runspacepool, so we'll have to jump through hoops now.
+        #   https://stackoverflow.com/questions/51818599/how-to-call-outside-defined-function-in-runspace-scriptblock
+        $bagOfFunctions = @(
+        )
+        $bagOfVariables = @(
+            'headers'
+            'apiUri',
+            'ApiEndpoint',
+            'ApiQuery',
+            'PageLimit'
+        )
+
+        $InitialSessionState = [initialsessionstate]::CreateDefault() #CreateDefault is important. If we just use Create, it creates a blank-slate session that has almost no functionality.
+        foreach ($function in $bagOfFunctions){
+            #Get body of function
+            $functionDefinition = Get-Content "Function:\$function" -ErrorAction Stop
+            #Create a sessionstate function entry
+            $SessionStateFunction = New-Object System.Management.Automation.Runspaces.SessionStateFunctionEntry -ArgumentList "$function", $functionDefinition
+            #Create a SessionStateFunction
+            $InitialSessionState.Commands.Add($SessionStateFunction)
+        }
+        foreach ($varName in $bagOfVariables){
+            #Get variable
+            $variable = Get-Variable -Name $varName
+            #Create a sessionstate variable entry
+            $SessionStateVariable = New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry($variable.Name, $variable.Value, $null)
+            #Create a SessionStateVariable
+            $InitialSessionState.Variables.Add($SessionStateVariable)
+        }
+        # End Hoops
+
+        # Now back to our regularly scheduled runspace pool creation
+        Write-Verbose "Creating runspace pool with $MaxThreads concurrent threads."
+        $pool = [RunspaceFactory]::CreateRunspacePool(1,$MaxThreads,$InitialSessionState,$Host)
+        $pool.ApartmentState = "MTA"
+        $pool.Open()
+        $runspaces = @()
+        #endregion
+
+        #region BLOCK 2: Create reusable scriptblock. This is the workhorse of the runspace. Think of it as a function.
+        
+        $scriptblock = {
+            Param (
+                [hashtable]$headers,
+                [string]$apiUri,
+                [string]$ApiEndpoint,
+                [hashtable]$ApiQuery,
+                [int]$PageLimit
+            )
+            Write-Verbose "Invoke-RestMethod for $apiUri`/$ApiEndpoint begin at $(Get-Date)"
+            $results = Invoke-RestMethod -Uri "$apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $ApiQuery
+            Write-Verbose "Invoke-RestMethod for $apiUri`/$ApiEndpoint complete at $(Get-Date)"
+
+            If ($results.PSobject.Properties.name -eq "results") { # The returned object contains a property named "results" and is therefore a collection. We have to do some magic to extract all the data. 
+                $results.results # Return the first set of results.
+                $resultsCount = $results.results.count
+                $totalResults = $results.total #The call will only return 100 objects at a time. This tells us if there are more to get.
+                $neededCallCount = [Math]::Ceiling($totalResults/100) #We would need this many API calls to return all the data.
+                If($PageLimit -gt 0 -and $PageLimit -lt $neededCallCount){
+                    $additionalCallCount = $PageLimit - 1 #We've already called it once.
+                }
+                Else{
+                    $additionalCallCount = $neededCallCount - 1 #We've already called it once.
+                }
+                $body+=@{'offset' = '0'} #Because we're going to need to increment the offset, and we didn't have an offset as part of the query to begin, we have to add a zero-value offset before we can increment it.
+                for ($offset=100; $offset -le $additionalCallCount; $offset+=100){
+                    $body.offset = "$offset" # Update the offset value for the next Api call.
+                    Write-Verbose "Invoke-RestMethod for $apiUri`/$ApiEndpoint begin at $(Get-Date)"
+                    $results = Invoke-RestMethod -Uri "$apiUri`/$ApiEndpoint" -Method Get -Headers $headers -Body $ApiQuery
+                    $results.results # Return the next batch of results.
+                    Write-Verbose "Invoke-RestMethod for $apiUri`/$ApiEndpoint complete at $(Get-Date)"
+                }
+
+            } Else { #This is an object (or empty). We can just return the results.
+                $results
+            }
+        }
+        #endregion
+    }
+    process{
+        #region BLOCK 3: Create runspace and add to runspace pool
+        $runspaceParams = @{'headers'=$headers;'apiUri'=$apiUri; 'apiEndpoint'=$InputObject.ApiEndpoint; 'ApiQuery'=$InputObject.ApiQuery; 'PageLimit'=$PageLimit}
+        $runspace = [PowerShell]::Create()
+        $null = $runspace.AddScript($scriptblock)
+        $null = $runspace.AddParameters($runspaceParams)
+        $runspace.RunspacePool = $pool
+        #endregion
+
+        #region BLOCK 4: Add runspace to runspaces collection and "start" it
+        # Asynchronously runs the commands of the PowerShell object pipeline
+        $runspaces += [PSCustomObject]@{ Pipe = $runspace; Status = $runspace.BeginInvoke() }
+        #endregion
+    }
+    end{
+        #region BLOCK 5: Wait for runspaces to finish
+        Write-Verbose "Created $($runspaces.Count) PowerShell runspaces. Awaiting completion of all runspaces."
+        while ($runspaces.Status -ne $null){
+            $completed = $runspaces | Where-Object { $_.Status.IsCompleted -eq $true }
+
+            #Monitor
+            $notCompleted = $runspaces | Where-Object { $_.Status.IsCompleted -eq $false }
+            [int]$notCompletedCount = $notCompleted.Count
+            Write-Progress -Activity "Runspaces remaining to complete (out of $($runspaces.Count))..." -Status $($notCompletedCount) -PercentComplete (($notCompletedCount / $runspaces.Count) * 100) -ErrorAction SilentlyContinue
+            #Write-Verbose $(Get-Runspace | out-string)
+            #End Monitor
+
+            foreach ($runspace in $completed)
+            {
+                $runspace.Pipe.EndInvoke($runspace.Status)
+                $runspace.Status = $null
+            }
+        }
+        Write-Verbose "All runspaces complete."
+        #endregion
+
+        #region BLOCK 6: Clean up
+        $pool.Close() 
+        $pool.Dispose()
+        #endregion
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
+}
+
 #region DEPRECATED FUNCTIONS
+
+Function Get-AnchorOrgMachinesOLD {
+<#
+    .SYNOPSIS
+    Returns AnchorMachine objects for a given AnchorOrganization.
+
+    .DESCRIPTION
+    Accepts a collection of AnchorOrganization objects from the pipeline or a number of AnchorOrganization id strings in the arguments.
+    Returns a collection of AnchorMachine objects.
+    
+    .NOTES
+    The owning company_id is not returned in the API call, so we add it from the supplied value.
+    Also, the API call returns all machines from the organization and all child organizations.
+    Therefore, the company_id does not always represent the owning organization of a particular machine.
+    Use the -ExcludeChildren property to return machines that are not from child organizations.
+
+    .PARAMETER id
+    AnchorOrganization id number. Can accept an array of id numbers.
+
+    .PARAMETER ExcludeChildren
+    Do not return machines from child organizations.
+    (This functionality is not part of the API. In order to achieve this, we have to make an additional API call to get the children of the given organization, then an API call for each child to get the machines. We then select only the machines that do not appear in the list of child organization machines.)
+
+    .PARAMETER IncludeApiMachines
+    Each time a machine is granted an Oauth token through the API, it creates a machine record that gets returned as part of the collection of machines.
+    This function discards these API machine objects by default.
+    This switch causes these objects to be returned.
+    (This functionality is not part of the API, and there is no property to determine this type of machine. In order to achieve this, we exclude machines where agent_version -eq $null -and machine_type -eq 'agent' -and os_type -eq $null.)
+
+    .INPUTS
+    AnchorOrganization object, containing at least the .id property.
+
+    .OUTPUTS
+    A collection of AnchorMachine objects.
+
+    .EXAMPLE
+    C:\PS> Get-AnchorOrgMachines -id 123456
+    agent_version                : 2.7.1.1550
+    bandwidth_throttle           : 
+    created                      : 2019-12-26T15:08:29
+    dns_name                     : PC001
+    guid                         : c5b26ffc-xxxx-40da-b4d9-a76b636816e0
+    health_report_period_minutes : 
+    id                           : 132465
+    last_disconnect              : 
+    last_login                   : 2020-01-20T10:57:44
+    locked                       : False
+    machine_type                 : server
+    manual_collisions            : False
+    nickname                     : 
+    os_type                      : win
+    os_version                   : Windows Server 2016
+    throttle_exception_days      : 
+    throttle_exception_dow       : 
+    throttle_exception_end       : 
+    throttle_exception_start     : 
+    throttle_exception_throttle  : 
+    throttled                    : False
+    type                         : machine
+    company_id              : 123456
+
+    .EXAMPLE
+    C:\PS> Get-AnchorOrgMachines -id 123456, 123457 -ExcludeChildren
+    agent_version                : 2.7.1.1550
+    bandwidth_throttle           : 
+    created                      : 2019-12-26T15:08:29
+    dns_name                     : PC001
+    guid                         : c5b26ffc-xxxx-40da-b4d9-a76b636816e0
+    health_report_period_minutes : 
+    id                           : 132465
+    last_disconnect              : 
+    last_login                   : 2020-01-20T10:57:44
+    locked                       : False
+    machine_type                 : server
+    manual_collisions            : False
+    nickname                     : 
+    os_type                      : win
+    os_version                   : Windows Server 2016
+    throttle_exception_days      : 
+    throttle_exception_dow       : 
+    throttle_exception_end       : 
+    throttle_exception_start     : 
+    throttle_exception_throttle  : 
+    throttled                    : False
+    type                         : machine
+    company_id              : 123456
+    (...)
+
+    .EXAMPLE
+    C:\PS> $anchorOrganizations | Get-AnchorOrgMachines -ExcludeChildren
+    agent_version                : 2.7.1.1550
+    bandwidth_throttle           : 
+    created                      : 2019-12-26T15:08:29
+    dns_name                     : PC001
+    guid                         : c5b26ffc-xxxx-40da-b4d9-a76b636816e0
+    health_report_period_minutes : 
+    id                           : 132465
+    last_disconnect              : 
+    last_login                   : 2020-01-20T10:57:44
+    locked                       : False
+    machine_type                 : server
+    manual_collisions            : False
+    nickname                     : 
+    os_type                      : win
+    os_version                   : Windows Server 2016
+    throttle_exception_days      : 
+    throttle_exception_dow       : 
+    throttle_exception_end       : 
+    throttle_exception_start     : 
+    throttle_exception_throttle  : 
+    throttled                    : False
+    type                         : machine
+    company_id              : 123456
+    (...)
+
+    .LINK
+    API reference: http://developer.anchorworks.com/v2/#machine-methods
+
+    .LINK
+    Get-AnchorOauthToken
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Mandatory=$true,Position=0,HelpMessage='Organization ID')][string[]]$id,
+        [Parameter(Position=1,HelpMessage='Only return machines explicitly in this organization.')][switch]$ExcludeChildren,
+        [Parameter(Position=2,HelpMessage='Return machines that have logged on via the API.')][switch]$IncludeApiMachines
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+    }
+    process{
+        #We might get multiple $id values from the parameter.
+        ForEach ($orgId in $id){
+            $apiEndpoint = "organization/$($orgId)/machines"
+            $myMachines = Get-AnchorData -OauthToken $Global:anchorOauthToken -ApiEndpoint $apiEndPoint
+            If($ExcludeChildren){
+                $childOrgs = Get-AnchorOrgChildren -id $orgId
+                If($childOrgs){
+                    $childOrgMachines = $childOrgs | Get-AnchorOrgMachines #-IncludeApiMachines $IncludeApiMachines
+                    $exclusiveMachines = Compare-Object $myMachines $childOrgMachines -Property id -PassThru | Where-Object SideIndicator -eq "<="
+                    $results = $exclusiveMachines
+                } else { # This org has no children, so we can just return the original list.
+                    $results = $myMachines
+                }
+            } else {
+                $results = $myMachines
+            }
+            # If there are no results, we don't want to return an empty object with just the organization property populated.
+            If($results){
+                # If more than one object is returned, we have to itterate.
+                $results | ForEach-Object {
+                    $_ | Add-Member -MemberType NoteProperty -Name 'last_login(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.last_login)
+                    $_ | Add-Member -MemberType NoteProperty -Name 'created(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.created)
+                    $_ | Add-Member -MemberType NoteProperty -Name 'last_disconnect(local_offset)' -Value (Convert-UtcDateStringToLocalDateTime $_.last_disconnect)
+                    $_ | Add-Member -MemberType NoteProperty -Name 'company_id' -Value $orgId
+                }
+                If($IncludeApiMachines){
+                    $results
+                }
+                Else{
+                    $results | Where-Object {-not ($_.agent_version -eq $null -and $_.machine_type -eq 'agent' -and $_.os_type -eq $null)}
+                }
+            }
+        }
+    }
+    end{
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
+}
 
 
 
