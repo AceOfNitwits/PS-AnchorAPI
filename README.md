@@ -216,8 +216,6 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ✅ Move-AnchorFile (Move a file)
    
-   Untested.
-   
    Ultimately, hope to add a feature to specify a root id so that a file can be moved to another root (by copying locally).
 
 ⬜ Move a folder                                        
