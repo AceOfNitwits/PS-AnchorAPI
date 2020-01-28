@@ -189,6 +189,105 @@ Function New-AnchorFileShare {
 
 # Machine functions
 
+Function Remove-AnchorMachineBackup {
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#delete-a-backup
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory,ValueFromPipelineByPropertyName,Position=0,HelpMessage='ID of the Backup root')][int]$id,
+        [Parameter(Mandatory,ValueFromPipelineByPropertyName,Position=1)][int]$machine_id,
+        [Parameter(HelpMessage='If set, all actions are automatically confirmed without user input.')]$Confirm
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiCalls=@()
+    }
+    process{
+        $apiEndpoint = "machine/$machine_id/backup/$id/delete"
+        # Create the array of API calls to make.
+        $apiQuery = @{
+        }
+        $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
+        $apiCalls += $apiCall
+    }
+    end{
+        # Confirmation
+        If($Confirm){
+            $confirmation='Y'
+        }
+        Else {
+            Write-Host "You are about to attempt to DELETE the following machine backups:" -ForegroundColor Red
+            $apiCalls | ForEach-Object {Write-Host $($_.ApiQuery | out-string)}
+            $confirmation = Read-Host "Confirm: [Y]es, [N]o (Default: No)"
+        }
+        # End Confirmation
+        If($confirmation -eq 'Y'){
+            $results = $apiCalls | Invoke-AnchorApiPost
+            If($results){
+                $results
+            }
+        }
+        Else {
+            Write-Host 'Action canceled. No machine backups deleted.'
+        }
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
+}
+
+Function New-AnchorMachineBackup {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory,ValueFromPipelineByPropertyName,Position=0)][int]$id,
+        [Parameter(Mandatory,ValueFromPipelineByPropertyName,Position=1)][string]$path,
+        [Parameter(ValueFromPipelineByPropertyName,Position=2)][string]$username,
+        [Parameter(ValueFromPipelineByPropertyName,Position=3)][string]$password,
+        [Parameter(HelpMessage='If set, all actions are automatically confirmed without user input.')]$Confirm
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiCalls=@()
+    }
+    process{
+        ForEach ($machineId in $id){
+            $apiEndpoint = "machine/$machineId/backups/create"
+            # Create the array of API calls to make.
+            $apiQuery = @{
+                'path'=$path
+            }
+            $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
+            $apiCalls += $apiCall
+        }
+    }
+    end{
+        # Confirmation
+        If($Confirm){
+            $confirmation='Y'
+        }
+        Else {
+            Write-Host "You are about to attempt to create the following machine backups:"
+            $apiCalls | ForEach-Object {Write-Host $($_.ApiQuery | out-string)}
+            $confirmation = Read-Host "Confirm: [Y]es, [N]o (Default: No)"
+        }
+        # End Confirmation
+        If($confirmation -eq 'Y'){
+            $results = $apiCalls | Invoke-AnchorApiPost
+            If($results){
+                $results.GeneratePwLastChangedPsLocal()
+                $results.PopulateCompanyName() #company_name = (Get-AnchorOrg -id $($results.company_id)).name
+                $results
+            }
+        }
+        Else {
+            Write-Host 'Action canceled. No machine backups created.'
+        }
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
+}
+
 # Organization functions
 
 # Person functions

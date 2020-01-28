@@ -30,6 +30,8 @@
         'Get-AnchorGuestFileShares',
         'Get-AnchorMachine',
         'Get-AnchorMachineBackup',
+        'New-AnchorMachineBackup',
+        'Remove-AnchorMachineBackup',
         'Get-AnchorMachineBackups',
         'Get-AnchorMachineFseFiles',
         'Get-AnchorMachineFseMap',
