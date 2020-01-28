@@ -1,15 +1,6 @@
-﻿# Include the Anchor API scripts
-#. ".\Anchor-ApiOauth.ps1"
-#. ".\Anchor-ApiReporting.ps1"
+﻿# This script contains a number of functions that help monitor backups.
 
-#$anchorParentOrgID = 361 # Modify this to be your own org_id
-
-#Run this first to get an Oauth token and top organization id
-Function Sign-In {
-    Register-AnchorAccount
-}
-
-# Populates various lists of anchor objects 
+# Populates some variables with various lists of anchor objects that you can pass to other fuctions.
 Function Populate-UsefulVariables{
 
     Write-Host "Getting top-level org..."
@@ -67,7 +58,7 @@ Function Get-AllBackups {
 # Go make a sandwich while you wait for this to complete.
 Function Get-BackupsLastModified {
     Write-Host "Getting last_modified date for machine backups."
-    $duration = Measure-Command{$script:anchorBackupsLastModified = $anchorBackups | Get-AnchorRootLastModified -MaxLookback 31 -Verbose}
+    $duration = Measure-Command{$script:anchorBackupsLastModified = $anchorBackups | Get-AnchorRootLastModified -MaxLookback 365}
     $script:anchorBackupsLastModified  | Add-Member -MemberType ScriptProperty -Name 'age(days)' -Value {[math]::Round((New-TimeSpan -start (Get-Date($this.modified)) -end (Get-Date).ToUniversalTime()).TotalDays, 2)} -PassThru | Sort id | FT
     $secondsPerBackup = $duration.TotalSeconds / $anchorBackups.Count
     Write-Host $script:anchorBackupsLastModified.Count "out of" $anchorBackups.Count "backup roots processed."
@@ -80,11 +71,14 @@ Function Report-MachineBackups{
     Populate-UsefulVariables
     Get-AllBackups
     Get-BackupsLastModified
-    $script:backupReport = [pscustomobject]@()
+    $script:backupReport = [pscustomobject]@() # A custom object array to hold our report.
+    # Now we itterate through each of the backup objects we got from Get-AllBackups
     $anchorBackups | ForEach-Object {
+        # Collect the info we want for our report.
         $rootId = $_.id
         $machineId = $_.machine_id
         $path = $_.path
+        # Find the last-modified date for each of the backup roots.
         $myLastModified = ($Script:anchorBackupsLastModified | ? {$_.id -eq $rootId}).modified
         $myAge = [math]::Round((New-TimeSpan -start (Get-Date($myLastModified)) -end (Get-Date).ToUniversalTime()).TotalDays, 2)
         $myMachine = $script:anchorOrgMachines | ? {$_.id -eq $machineId}
@@ -99,5 +93,5 @@ Function Report-MachineBackups{
         $myBackup | Add-Member -MemberType NoteProperty -Name 'Age(Days)' -Value $myAge
         $Script:backupReport += $myBackup
     }
-    $script:backupReport
+    $script:backupReport | Format-Table -Wrap
 }
