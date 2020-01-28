@@ -26,6 +26,7 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
    - Compare the list of an organizaiton's machines to a list of company managed machines (queried from a RMM for example) to determine if users have loaded the agent on non-authorized machines; automatically create tickets/emails for followup.
    - Check for the existence of a backup of certain folders on every machine and create it if it doesn't exist.
    - Move a file or folder between roots that aren't synced to your PC. (This can be accomplished natively in a multi-step process, by navigating to the folder in the Web portal, downloading the file, then navigating to the target folder and uploading the file, then deleting the copy on your PC. With the Powershell Anchor-Api module this --is-- will be performed in a single command.)
+   - Backup FSE mappings. Natively, if FSE mappings are lost (because a tech re-registers the sync account under a different Windows profile, for example 😡) there is no way to recover them, and no record of what they were.
 
 # Usage
 
