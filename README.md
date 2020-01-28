@@ -12,8 +12,8 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 - Powershell's abilities to manipulate collections of objects, run multi-threaded processes, and schedule jobs allows for process automation that is not available through the native Anchor interfaces. Examples, both general and specific:
    - Add users, shares, etc. to multiple organizations at one time.
    - Add a specific file or folder to the root of every user, in companies that start with 'A', that are in the US/Eastern time zone, all at once, with a single command.
-   - List machines that are specific to an organization and not its children. (Seriously, this should be implemented natively, but it's not.)
-   - Get the last date and time the contents of a root changed.
+   - List machines that are specific to an organization and not its children. (Seriously, this should be implemented natively, but it's not.) `PS> Get-AnchorOrg -Top | Get-AnchorOrgMachines -ExcludeChildren`
+   - Get the last date and time the contents of a root changed. `Get-AnchorRootLastModified`
    - Daily, create a list of machines that have not logged in for a specific time period and create a ticket in your PSA to have someone check on the machine.
    - Monitor for specific administrative activity (like creation of an organization) and create tickets or send emails to appropriate resources for necessary follow-up.
    - Automate the onboarding of an entire organization, including org policies, shares, users, and groups, with a collection of .csv files and a single command.
@@ -23,10 +23,10 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
    - Automatically upload and share files created from other automation processes.
    - Security monitoring: Get a list of all file shares created before a certain date that are still active.
    - Automatically provision more space for an organization that approaches its space quota and generate an email/ticket for follow-up.
-   - Compare the list of an organizaiton's machines to a list of company managed machines (queried from a RMM for example) to determine if users have loaded the agent on non-authorized machines; automatically create tickets/emails for followup.
+   - Compare the list of an organizaiton's machines to a list of company managed machines (queried from an RMM tool, for example) to determine if users have loaded the agent on non-authorized machines; automatically create tickets/emails for followup.
    - Check for the existence of a backup of certain folders on every machine and create it if it doesn't exist.
    - Move a file or folder between roots that aren't synced to your PC. (This can be accomplished natively in a multi-step process, by navigating to the folder in the Web portal, downloading the file, then navigating to the target folder and uploading the file, then deleting the copy on your PC. With the Powershell Anchor-Api module this --is-- will be performed in a single command.)
-   - Backup FSE mappings. Natively, if FSE mappings are lost (because a tech re-registers the sync account under a different Windows profile, for example 😡) there is no way to recover them, and no record of what they were.
+   - Backup FSE mappings. Natively, if FSE mappings are lost (because a tech re-registers the sync account under a different Windows profile, for example 😡) there is no way to recover them, and no record of what they were. **See the Examples folder, and if you haven't done this, do it now.**
 
 # Usage
 
@@ -34,7 +34,7 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 1. Run `Import-Module Anchor-Api` to import the functions, classes, and variables into your current session.
 
-1. Sign in and try it out. 
+1. Try it out. 
    1. You'll probably want to start with `Get-AnchorOrg -Top`, which will return the top-level organization (yours). You can use that object as the key in other functions.
    1. For example: 
    
@@ -45,8 +45,8 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
    `#anchorTopOrg | Get-AnchorOrgMachines`
 
 - To see the list of available commands, use `Get-Command -Module Anchor-Api`.
-- `Get-Help <command-name>` returns helpful info in some cases.
-- Look at Anchor-BackupCheck.ps1 for examples.
+- `Get-Help <command-name>` returns helpful info in some cases. (More to come.)
+- Look at the Examples folder of this git for examples.
 
 # Functions
 
@@ -70,11 +70,11 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ✅ Get-AnchorOauthToken
 
-  Returns the current Oauth token so it can be inspected or manually imported into another session without needing to re-authenticate.
+  Returns the current Oauth token so it can be inspected or manually exported and imported into another session without needing to re-authenticate (as long as the token hasn't expired).
 
 ✅ Set-AnchorOauthToken
 
-  Manually set the Oauth token for the current session to prevent the need to authenticate again if you already have a valid token from another session.
+  Manually set the Oauth token for the current session to prevent the need to authenticate again if you already have a valid token from another session (as long as the token hasn't expired).
 
 ✅ Set-AnchorOauthUri
 
