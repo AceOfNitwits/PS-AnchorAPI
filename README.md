@@ -4,6 +4,27 @@ PowerShell module for managing Axcient Anchor via the v2 API
 This module is designed to administer and automate all aspects of the Anchor system that are available through the API.
 Functions should be PS-friendly, returning objects and accepting pipeline input where possible, including collections of objects, which allows for creation/modification/deletion of Anchor objects in bulk.
 
+# Why a PowerShell Module for Anchor?
+
+- PowerShell offers powerful capabilities for administration and automation. Combining this with the flexibility of Anchor affords many benefits.
+- System administrators are already using PowerShell to administer and automate products like Office 365 and ActiveDirectory.
+- Other popular Web-based services (like Autotask) have open-source PowerShell wrappers. A PowerShell wrapper for Anhor allows administrators to use data from one (or several) systems to drive actions in other systems.
+- Powershell's abilities to manipulate collections of objects, run multi-threaded processes, and schedule jobs allows for process automation that is not available through the native Anchor interfaces. Examples, both general and specific:
+   - Add users, shares, etc. to multiple organizations at one time.
+   - Add a specific file or folder to the root of every user, in companies that start with 'A', that are in the US/Eastern time zone, all at once, with a single command.
+   - List machines that are specific to an organization and not its children. (Seriously, this should be implemented natively, but it's not.)
+   - Get the last date and time the contents of a root changed.
+   - Daily, create a list of machines that have not logged in for a specific time period and create a ticket in your PSA to have someone check on the machine.
+   - Monitor for specific administrative activity (like creation of an organization) and create tickets or send emails to appropriate resources for necessary follow-up.
+   - Automate the onboarding of an entire organization, including org policies, shares, users, and groups, with a collection of .csv files and a single command.
+   - Automate user termination procedures, including granting access to the user's root to other users.
+   - Monitor for the existence of specific files in a location for automated processing. (For example, saving a .csv file into a particular folder could trigger creation of user accounts in Office 365 or even Anchor itself.)
+   - Create a report of user access rights that can be formatted and manipulated to meet specific requirements.
+   - Automatically upload and share files created from other automation processes.
+   - Security monitoring: Get a list of all file shares created before a certain date that are still active.
+   - Automatically provision more space for an organization that approaches its space quota and generate an email/ticket for follow-up.
+   - Compare the list of an organizaiton's machines to a list of company managed machines (queried from a RMM for example) to determine if users have loaded the agent on non-authorized machines; automatically create tickets/emails for followup.
+
 # Usage
 
 1. Download the files in the Anchor-Api folder to a folder named Anchor-Api, in your $env:PSModulePath (usually %userprofile%\My Documents\WindowsPowerShell\Modules, or C:\Program Files\WindowsPowerShell\Modules, or C:\windows\system32\WindowsPowerShell\v1.0\Modules\).
