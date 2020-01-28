@@ -13,6 +13,52 @@
 
 # File and Folder functions
 
+Function Move-AnchorFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Position=0)][int]$root_id,
+        [Parameter(ValueFromPipelineByPropertyName,Position=1)][int]$id,
+        [Parameter(Position=2)][int]$to_folder_id,
+        [Parameter(HelpMessage='If set, all actions are automatically confirmed without user input.')]$Confirm
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiCalls=@()
+    }
+    process{
+        $apiEndpoint = "files/$root_id/$id/move"
+        # Create the array of API calls to make.
+        $apiQuery = @{
+            'to_folder_id'=$(If($to_folder_id){$to_folder_id}Else{''}) # Can't use 0. Must use ''.
+        }
+        $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
+        $apiCalls += $apiCall
+    }
+    end{
+        # Confirmation
+        If($Confirm){
+            $confirmation='Y'
+        }
+        Else {
+            Write-Host "You are about to attempt to move the following file(s):"
+            $apiCalls | ForEach-Object {Write-Host $($_.ApiQuery | out-string)}
+            $confirmation = Read-Host "Confirm: [Y]es, [N]o (Default: No)"
+        }
+        # End Confirmation
+        If($confirmation -eq 'Y'){
+            $results = $apiCalls | Invoke-AnchorApiPost
+            If($results){
+                $results
+            }
+        }
+        Else {
+            Write-Host 'Action canceled. No files moved.'
+        }
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
+}
+
 Function Rename-AnchorFile {
     [CmdletBinding()]
     param(

@@ -51,7 +51,7 @@ Function Disconnect-AnchorApiSession {
     param()
     Revoke-AnchorOauthToken -oauthToken $Global:anchorOauthToken -tokenType access_token
     Revoke-AnchorOauthToken -oauthToken $Global:anchorOauthToken -tokenType refresh_token
-    Remove-Variable -Name 'anchorOauthToken' -Scope 'Script'
+    Remove-Variable -Name 'anchorOauthToken' -Scope 'Global'
 }
 
 
