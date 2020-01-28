@@ -273,9 +273,9 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ### Machine functions
 
-⬜ Create a backup                                      
+✅ New-AnchorMachineBackup (Create a backup)
 
-⬜ Delete a backup                                      
+✅ Remove-AnchorMachineBackup (Delete a backup)
 
 ⬜ Restore a backup                                     
 
