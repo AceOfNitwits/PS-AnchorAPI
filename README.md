@@ -217,7 +217,7 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ⬜ Move a folder                                        
 
-⬜ Rename a file                                        
+✅ Rename a file                                        
 
 ⬜ Rename a folder                                      
 
