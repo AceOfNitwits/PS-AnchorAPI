@@ -13,6 +13,52 @@
 
 # File and Folder functions
 
+Function Rename-AnchorFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipelineByPropertyName,Position=0)][int]$root_id,
+        [Parameter(ValueFromPipelineByPropertyName,Position=1)][int]$id,
+        [Parameter(Position=2)][string]$name,
+        [Parameter(HelpMessage='If set, all actions are automatically confirmed without user input.')]$Confirm
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiCalls=@()
+    }
+    process{
+        $apiEndpoint = "files/$root_id/$id/rename"
+        # Create the array of API calls to make.
+        $apiQuery = @{
+            'name'=$name
+        }
+        $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
+        $apiCalls += $apiCall
+    }
+    end{
+        # Confirmation
+        If($Confirm){
+            $confirmation='Y'
+        }
+        Else {
+            Write-Host "You are about to attempt to rename the following file(s):"
+            $apiCalls | ForEach-Object {Write-Host $($_.ApiQuery | out-string)}
+            $confirmation = Read-Host "Confirm: [Y]es, [N]o (Default: No)"
+        }
+        # End Confirmation
+        If($confirmation -eq 'Y'){
+            $results = $apiCalls | Invoke-AnchorApiPost
+            If($results){
+                $results
+            }
+        }
+        Else {
+            Write-Host 'Action canceled. No files renamed.'
+        }
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
+}
+
 Function Save-AnchorFile {
     [CmdletBinding()]
     param(
@@ -160,7 +206,7 @@ Function New-AnchorPerson {
                 'generate_password'=$(If($generate_password){'true'}Else{'false'})
                 'pw_expires'=$(If($pw_expires){$(Get-Date($pw_expires) -format 'yyyy-MM-ddThh:mm:ss')})
                 'webdav'=$(If($webdav){'true'}Else{'false'})
-                'space_quota'=$space_quota
+                'space_quota'=$(If($space_quota){$space_quota}Else{''}) #$space_quota is an [int], which will become 0 if we don't supply a value.
                 'mobile_phone'=$mobile_phone
                 'site_admin'=$(If($site_admin){'true'}Else{'false'})
                 'system_admin'=$(If($system_admin){'true'}Else{'false'})
@@ -194,7 +240,7 @@ Function New-AnchorPerson {
             [AnchorPerson[]]$results = $apiCalls | Invoke-AnchorApiPost
             If($results){
                 $results.GeneratePwLastChangedPsLocal()
-                $results.company_name = (Get-AnchorOrg -id $($results.company_id)).name
+                $results.PopulateCompanyName() #company_name = (Get-AnchorOrg -id $($results.company_id)).name
                 $results
             }
         }

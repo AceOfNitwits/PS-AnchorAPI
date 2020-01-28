@@ -21,6 +21,7 @@
         'Get-AnchorActivityTypes',
         'Get-AnchorApiVersion',
         'Get-AnchorFolderMetadata',
+        'Rename-AnchorFile',
         'Get-AnchorFileMetadata',
         'Get-AnchorGroup',
         'Get-AnchorGroupMembers',
