@@ -24,6 +24,7 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
    - Security monitoring: Get a list of all file shares created before a certain date that are still active.
    - Automatically provision more space for an organization that approaches its space quota and generate an email/ticket for follow-up.
    - Compare the list of an organizaiton's machines to a list of company managed machines (queried from a RMM for example) to determine if users have loaded the agent on non-authorized machines; automatically create tickets/emails for followup.
+   - Check for the existence of a backup of certain folders on every machine and create it if it doesn't exist.
 
 # Usage
 
