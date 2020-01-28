@@ -375,6 +375,8 @@ Yes. You can navigate the Anchor file system from the PowerShell command line! I
 
 ## Allow for storage of custom settings.
 
+See: https://stackoverflow.com/questions/25318199/powershell-module-where-to-store-user-settings
+
 # Comments
 - I know I'm onto something when I can write statements like these, and they work: 
 
