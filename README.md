@@ -8,7 +8,7 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 - PowerShell offers powerful capabilities for administration and automation. Combining this with the flexibility of Anchor affords many benefits.
 - System administrators are already using PowerShell to administer and automate products like Office 365 and ActiveDirectory.
-- Other popular Web-based services (like Autotask) have open-source PowerShell wrappers. A PowerShell wrapper for Anhor allows administrators to use data from one (or several) systems to drive actions in other systems.
+- Other popular Web-based services (like Autotask) have open-source PowerShell wrappers. A PowerShell wrapper for Anchor allows administrators to use data from one (or several) systems to drive actions in other systems.
 - Powershell's abilities to manipulate collections of objects, run multi-threaded processes, and schedule jobs allows for process automation that is not available through the native Anchor interfaces. Examples, both general and specific:
    - Add users, shares, etc. to multiple organizations at one time.
    - Add a specific file or folder to the root of every user, in companies that start with 'A', that are in the US/Eastern time zone, all at once, with a single command.
