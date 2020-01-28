@@ -185,9 +185,132 @@ Function New-AnchorFileShare {
 
 # Group functions
 
+Function New-AnchorGroup {
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#create-a-group
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(ParameterSetName='import')][string]$FromCsv,
+        [Parameter(ParameterSetName='commandLine',ValueFromPipelineByPropertyName,Position=0)][int]$company_id,
+        [Parameter(ParameterSetName='commandLine',ValueFromPipelineByPropertyName,Position=1)][string]$name,
+        [Parameter(ParameterSetName='commandLine',ValueFromPipelineByPropertyName,Position=2)][int]$members,
+        [Parameter(ParameterSetName='commandLine',ValueFromPipelineByPropertyName,Position=3)][int]$member_group,
+        [Parameter(HelpMessage='If set, all actions are automatically confirmed without user input.')]$Confirm
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiEndpoint = "group/create"
+        $apiCalls=@()
+    }
+    process{
+        If($FromCsv){
+            #File processing
+            $csvData = Import-Csv -Path $FromCsv
+            #$csvFields = Get-Member -InputObject $csvData[0] | Where-Object MemberType -eq NoteProperty
+            $csvData | ForEach-Object {
+                $apiQuery = @{}
+                foreach ($property in $_.PSObject.Properties){
+                    $apiQuery[$($property.Name)] = $property.Value
+                }
+            $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
+            $apiCalls += $apiCall
+            }
+        }
+        Else{
+            # Create the array of API calls to make.
+            $apiQuery = @{
+                'name'=$name
+                'company_id'=$company_id
+            }
+            If($members){$apiQuery+=@{'members'=$members}}
+            If($member_groups){$apiQuery+=@{'member_groups'=$member_groups}}
+            $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
+            $apiCalls += $apiCall
+        }
+    }
+    end{
+        # Confirmation
+        If($Confirm){
+            $confirmation='Y'
+        }
+        Else {
+            Write-Host "You are about to attempt to create the following groups:"
+            $apiCalls | ForEach-Object {Write-Host $($_.ApiQuery | out-string)}
+            $confirmation = Read-Host "Confirm: [Y]es, [N]o (Default: No)"
+        }
+        # End Confirmation
+        If($confirmation -eq 'Y'){
+            $results = $apiCalls | Invoke-AnchorApiPost
+            If($results){
+                #$results.GeneratePwLastChangedPsLocal()
+                #$results.PopulateCompanyName() #company_name = (Get-AnchorOrg -id $($results.company_id)).name
+                $results
+            }
+        }
+        Else {
+            Write-Host 'Action canceled. No groups created.'
+        }
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
+}
+
 # Guest functions
 
 # Machine functions
+
+Function New-AnchorMachineBackup {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory,ValueFromPipelineByPropertyName,Position=0)][int]$id,
+        [Parameter(Mandatory,ValueFromPipelineByPropertyName,Position=1)][string]$path,
+        [Parameter(ValueFromPipelineByPropertyName,Position=2)][string]$username,
+        [Parameter(ValueFromPipelineByPropertyName,Position=3)][string]$password,
+        [Parameter(HelpMessage='If set, all actions are automatically confirmed without user input.')]$Confirm
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiCalls=@()
+    }
+    process{
+        ForEach ($machineId in $id){
+            $apiEndpoint = "machine/$machineId/backups/create"
+            # Create the array of API calls to make.
+            $apiQuery = @{
+                'path'=$path
+            }
+            $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
+            $apiCalls += $apiCall
+        }
+    }
+    end{
+        # Confirmation
+        If($Confirm){
+            $confirmation='Y'
+        }
+        Else {
+            Write-Host "You are about to attempt to create the following machine backups:"
+            $apiCalls | ForEach-Object {Write-Host $($_.ApiQuery | out-string)}
+            $confirmation = Read-Host "Confirm: [Y]es, [N]o (Default: No)"
+        }
+        # End Confirmation
+        If($confirmation -eq 'Y'){
+            [AnchorBackup[]]$results = $apiCalls | Invoke-AnchorApiPost
+            If($results){
+                $results.GeneratePwLastChangedPsLocal()
+                $results.PopulateCompanyName() #company_name = (Get-AnchorOrg -id $($results.company_id)).name
+                $results
+            }
+        }
+        Else {
+            Write-Host 'Action canceled. No machine backups created.'
+        }
+        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
+    }
+}
 
 Function Remove-AnchorMachineBackup {
 <#
@@ -232,57 +355,6 @@ Function Remove-AnchorMachineBackup {
         }
         Else {
             Write-Host 'Action canceled. No machine backups deleted.'
-        }
-        Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
-    }
-}
-
-Function New-AnchorMachineBackup {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory,ValueFromPipelineByPropertyName,Position=0)][int]$id,
-        [Parameter(Mandatory,ValueFromPipelineByPropertyName,Position=1)][string]$path,
-        [Parameter(ValueFromPipelineByPropertyName,Position=2)][string]$username,
-        [Parameter(ValueFromPipelineByPropertyName,Position=3)][string]$password,
-        [Parameter(HelpMessage='If set, all actions are automatically confirmed without user input.')]$Confirm
-    )
-    begin{
-        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
-        Update-AnchorApiReadiness
-        $apiCalls=@()
-    }
-    process{
-        ForEach ($machineId in $id){
-            $apiEndpoint = "machine/$machineId/backups/create"
-            # Create the array of API calls to make.
-            $apiQuery = @{
-                'path'=$path
-            }
-            $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
-            $apiCalls += $apiCall
-        }
-    }
-    end{
-        # Confirmation
-        If($Confirm){
-            $confirmation='Y'
-        }
-        Else {
-            Write-Host "You are about to attempt to create the following machine backups:"
-            $apiCalls | ForEach-Object {Write-Host $($_.ApiQuery | out-string)}
-            $confirmation = Read-Host "Confirm: [Y]es, [N]o (Default: No)"
-        }
-        # End Confirmation
-        If($confirmation -eq 'Y'){
-            $results = $apiCalls | Invoke-AnchorApiPost
-            If($results){
-                $results.GeneratePwLastChangedPsLocal()
-                $results.PopulateCompanyName() #company_name = (Get-AnchorOrg -id $($results.company_id)).name
-                $results
-            }
-        }
-        Else {
-            Write-Host 'Action canceled. No machine backups created.'
         }
         Write-Verbose "$($MyInvocation.MyCommand) complete at $(Get-Date)"
     }
@@ -366,6 +438,15 @@ Function New-AnchorPerson {
                 'quota_100'=$(If($quota_100){'true'}Else{'false'})
                 'send_welcome_email'=$(If($send_welcome_email){'true'}Else{'false'})
             }
+<#            If($group_ids -is [array]) {
+                for ($i=0; $i -lt $group_ids.Count; $i++){
+                    $apiQuery+=@{"group_ids[$i]"=$group_ids[$i]}
+                }
+            }
+            Else{
+                    $apiQuery+=@{"group_ids"=$group_ids}
+            }
+#>
             $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
             $apiCalls += $apiCall
         }

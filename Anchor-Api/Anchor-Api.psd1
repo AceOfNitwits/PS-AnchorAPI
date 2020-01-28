@@ -25,6 +25,7 @@
         'Rename-AnchorFile',
         'Get-AnchorFileMetadata',
         'Get-AnchorGroup',
+        'New-AnchorGroup',
         'Get-AnchorGroupMembers',
         'Get-AnchorGuest',
         'Get-AnchorGuestFileShares',
