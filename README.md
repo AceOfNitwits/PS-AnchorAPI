@@ -307,9 +307,7 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ✅ New-AnchorPerson (Create a person)
 
-   Accepts command line, pipeline, or CSV input for bulk additions.
-   
-   Still need to figure out how to add more than one group and root.
+   Accepts command line, pipeline, or CSV input for bulk additions, including adding accounts to more than one organization at a time.
 
 ⬜ Update a person                                      
 
