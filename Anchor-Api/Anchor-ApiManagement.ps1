@@ -365,6 +365,20 @@ Function Remove-AnchorMachineBackup {
 # Person functions
 
 Function New-AnchorPerson {
+<#
+    .PARAMETER FromCsv
+    Accepts the path of an existing .csv file that contains the field names and appropriate values
+
+    Notes for csv formatting:
+    True/False fields: empty or nonexistent = false. Field should contain only the string 'true' or 'false'. Excel will force this to 'TRUE' and 'FALSE' but the function will convert it to lowercase.
+    Fields that accept multiple values: These should be formatted as comma-separated text, enclosed in double quotes (e.g. "12345,54321"). If only passing a single value, formatting in this way is not necessary.
+
+    .PARAMETER Confirm
+    Specifies that all actions are implicitly confirmed. i.e. Will not prompt for confirmation.
+
+    .LINK
+    http://developer.anchorworks.com/v2/#create-a-person
+#>
     [CmdletBinding()]
     param(
         [Parameter(ParameterSetName='import')][string]$FromCsv,
@@ -401,12 +415,38 @@ Function New-AnchorPerson {
     process{
         If($FromCsv){
             #File processing
+            $arrayParams = @('group_ids','dept_shares') #These are the names of parameters that could possibly contain multiple values (arrays).
             $csvData = Import-Csv -Path $FromCsv
             #$csvFields = Get-Member -InputObject $csvData[0] | Where-Object MemberType -eq NoteProperty
             $csvData | ForEach-Object {
                 $apiQuery = @{}
                 foreach ($property in $_.PSObject.Properties){
-                    $apiQuery[$($property.Name)] = $property.Value
+                    If ($property.Name -in $arrayParams){ 
+                        # This parameter needs to be formatted as an array so that it can later be passed twice.
+                        $apiQuery[$($property.Name)] = $property.Value.Replace('"','').split(',')
+                    }
+                    Else{
+                        $apiQuery[$($property.Name)] = $property.Value
+                    }
+                }
+                # Two of the fields can accept multiple values. You have to pass the same field twice to the API server.
+                # You can't have duplicate keys in a hashtable, so we have to convert the hashtable to a URL string.
+                If(($apiQuery.group_ids -is [array]) -or ($apiQuery.dept_shares -is [array])) {
+                    $apiQueryString=''
+                    $first=$true
+                    ForEach ($key in $apiQuery.keys){
+                        ForEach ($value in $apiQuery[$key]) {
+                            If($first){
+                                $first=$false
+                            }
+                            Else{
+                                $apiQueryString += '&'
+                            }
+                            If($value -eq 'TRUE'){$value='true'}
+                            $apiQueryString += [System.Web.HttpUtility]::HtmlEncode($Key) + "=" + [System.Web.HttpUtility]::HtmlEncode($value);
+                        }
+                    }
+                    $apiQuery = $apiQueryString
                 }
             $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
             $apiCalls += $apiCall
@@ -438,15 +478,28 @@ Function New-AnchorPerson {
                 'quota_100'=$(If($quota_100){'true'}Else{'false'})
                 'send_welcome_email'=$(If($send_welcome_email){'true'}Else{'false'})
             }
-<#            If($group_ids -is [array]) {
-                for ($i=0; $i -lt $group_ids.Count; $i++){
-                    $apiQuery+=@{"group_ids[$i]"=$group_ids[$i]}
+
+            # Two of the fields can accept multiple values. You have to pass the same field twice to the API server.
+            # You can't have duplicate keys in a hashtable, so we have to convert the hashtable to a URL string.
+            If(($group_ids -is [array]) -or ($dept_shares -is [array])) {
+                $apiQueryString=''
+                $first=$true
+                ForEach ($key in $apiQuery.keys){
+                    ForEach ($value in $apiQuery[$key]) {
+                        If($first){
+                            $first=$false
+                        }
+                        Else{
+                            $apiQueryString += '&'
+                        }
+                        $apiQueryString += [System.Web.HttpUtility]::HtmlEncode($Key) + "=" + [System.Web.HttpUtility]::HtmlEncode($value);
+                    }
                 }
+                $apiQuery = $apiQueryString
             }
-            Else{
-                    $apiQuery+=@{"group_ids"=$group_ids}
-            }
-#>
+
+
+
             $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
             $apiCalls += $apiCall
         }
@@ -467,6 +520,7 @@ Function New-AnchorPerson {
             If($results){
                 $results.GeneratePwLastChangedPsLocal()
                 $results.PopulateCompanyName() #company_name = (Get-AnchorOrg -id $($results.company_id)).name
+                Write-Host "$($results.Count) accounts created."
                 $results
             }
         }
@@ -524,11 +578,11 @@ Function Get-AnchorFile {
     }
 }
 
+Function Post-AnchorApi {
 # Generic function for posting to an Anchor API endpoint.
 # The full uri of the endpoint is passed as a string.
 # The query (if needed) is passed as a hash table. This is the information that will be sent in the Body.
 #   The function handles pagination, so there is no need to pass the offset in the query hashtable.
-Function Post-AnchorApi {
     param(
         [Parameter(Mandatory,Position=0)][AllowNull()][object]$OauthToken,
         [Parameter(Mandatory,Position=1)][string]$ApiEndpoint, 
@@ -615,7 +669,7 @@ Function Invoke-AnchorApiPost { #New one!
                 [hashtable]$headers,
                 [string]$apiUri,
                 [string]$ApiEndpoint,
-                [hashtable]$ApiQuery,
+                $ApiQuery,
                 [int]$PageLimit
             )
             Write-Verbose "Invoke-RestMethod for $apiUri`/$ApiEndpoint begin at $(Get-Date)"
