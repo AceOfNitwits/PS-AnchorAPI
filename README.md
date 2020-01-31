@@ -10,6 +10,7 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 - System administrators are already using PowerShell to administer and automate products like Office 365 and ActiveDirectory.
 - Other popular Web-based services (like Autotask) have open-source PowerShell wrappers. A PowerShell wrapper for Anchor allows administrators to use data from one (or several) systems to drive actions in other systems.
 - Powershell's abilities to manipulate collections of objects, run multi-threaded processes, and schedule jobs allows for process automation that is not available through the native Anchor interfaces. Examples, both general and specific:
+   - Backup FSE mappings. Natively, if FSE mappings are lost (because a tech re-registers the sync account under a different Windows profile, for example 😡) there is no way to recover them, and no record of what they were. **See the Examples folder, and if you haven't done this, do it now.**
    - Add users, shares, etc. to multiple organizations at one time.
    - Add a specific file or folder to the root of every user, in companies that start with 'A', that are in the US/Eastern time zone, all at once, with a single command.
    - List machines that are specific to an organization and not its children. (Seriously, this should be implemented natively, but it's not.) `PS> Get-AnchorOrg -Top | Get-AnchorOrgMachines -ExcludeChildren`
@@ -26,7 +27,7 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
    - Compare the list of an organizaiton's machines to a list of company managed machines (queried from an RMM tool, for example) to determine if users have loaded the agent on non-authorized machines; automatically create tickets/emails for followup.
    - Check for the existence of a backup of certain folders on every machine and create it if it doesn't exist.
    - Move a file or folder between roots that aren't synced to your PC. (This can be accomplished natively in a multi-step process, by navigating to the folder in the Web portal, downloading the file, then navigating to the target folder and uploading the file, then deleting the copy on your PC. With the Powershell Anchor-Api module this --is-- will be performed in a single command.)
-   - Backup FSE mappings. Natively, if FSE mappings are lost (because a tech re-registers the sync account under a different Windows profile, for example 😡) there is no way to recover them, and no record of what they were. **See the Examples folder, and if you haven't done this, do it now.**
+
 
 # Usage
 
