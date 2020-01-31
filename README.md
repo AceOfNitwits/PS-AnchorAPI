@@ -255,9 +255,9 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ### Group functions
 
-☑ New-AnchorGroup (Create a group)
+✅ New-AnchorGroup (Create a group)
 
-   Can create groups, but if you try to specify members, creation fails silently.
+   Can accept csv input.
 
 ⬜ Update a group                                       
 
