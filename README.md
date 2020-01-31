@@ -205,7 +205,9 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ### Activity functions
 
-⬜ Create an activity record                            
+✅ New-AnchorActivity (Create an activity record)
+
+   Oddly enough, this command allows you to create false activity events in the activity log.
 
 ### File and Folder functions
 
