@@ -192,9 +192,13 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ✅ Get-AnchorMachineBackups (List backups)
 
-❗ Get-AnchorMachineFseFiles (List files on a file server enabled machine)
+✅ Get-AnchorMachineLocalFolders (List files on a file server enabled machine)
 
-   This API call seems to be non-functional.
+   The Api endpoint `machine/<machine_id>/ls` does not behave as the title describes:
+   1. It does not list files, only folders.
+   1. It works for any machine with a desktop client, not just FSE machines
+   
+   Unlike most of the endpoints, this one returns a paginated array of folder name strings, rather than nice key:value pairs.
 
 ✅ Get-AnchorMachineFseMap (Get a machine mapping)
 
@@ -289,8 +293,11 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 ✅ Remove-AnchorPerson (Delete a person)
 
    Accepts multiple values in the `-id` parameter, or pipeline input, for bulk deletions. 
+   
    ⚠ BE VERY CAREFUL WHAT YOU PASS TO THIS FUNCTION! Something like `$users = Get-AnchorOrg -Top | Get-AnchorOrgUsers; $users | Remove-AnchorPerson -Confirm:$false` will delete all users across all organizations without warning. (Just typing that gave me chills!)
+   
    Supports PowerShell `-Confirm` and `-WhatIf` common parameters to help avoid potential disasters.
+   
    🐛 All of the API parameters appear to be non-functional.
 
 ⬜ Create an account sync root                          
