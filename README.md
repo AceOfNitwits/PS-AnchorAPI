@@ -81,7 +81,7 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
   Change the Web URI from which tokens are granted. Should work with self-hosted Anchor instances.
 
-## Reporting functions 🐇
+## API functions 🐇
 
 ### General functions
 
@@ -93,124 +93,15 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ✅ Get-AnchorActivity (Get an activity record)
 
-### File and Folder functions
-
-✅ Get-AnchorFileMetadata (Get file metadata)
-
-✅ Get-AnchorFolderMetadata (Get folder metadata)
-
-### Group functions
-
-✅ Get-AnchorGroup (Get a group)
-
-✅ Get-AnchorGroupMembers (List group members)
-   
-   The API returns only the id's of member persons and groups. This function includes the `-Expand` option, to include group and person names in the results.
-
-### Guest functions
-
-✅ Get-AnchorGuest (Get a guest)
-
-   Provides an option to `-Expand` the object to include company_name and creator_name for human-friendly output.
-
-✅ Get-AnchorGuestFileShares (Get files and folders shared with a guest)
-   
-   Returned object includes a `created(local_offset)` field that is a valid PowerShell DateTime object with the correct local offset. This is convenient not only because it displays in local time, but because it can be used in PowerShell DateTime commands without additional conversion from a string or worrying about the time zone.
-   Optional `-Expand` parameter looks up the creator_name from the creator_id and adds it to the returned object.
-
-### Machine functions
-
-✅ Get-AnchorMachine (Get a machine)
-
-✅ Get-AnchorMachineBackup (Get a backup)                      
-
-✅ Get-AnchorMachineBackups (List backups)
-
-❗ Get-AnchorMachineFseFiles (List files on a file server enabled machine)
-
-   This API call seems to be non-functional.
-
-✅ Get-AnchorMachineFseMap (Get a machine mapping)
-
-✅ Get-AnchorMachineFseMaps (List mapped paths on a file server enabled machine)
-
-   Includes `-Expand` property
-
-✅ Get-AnchorMachineStatus (Get a machine's status)
-
-### Organization (Company) functions
-
-✅ Get-AnchorOrg (Get an organization)
-
-✅ Get-AnchorOrgActivity (List recent activity for an organization)
-
-   Automatically gets activity descriptions and returns them as part of the object for human-friendly output.
-
-   Provides option to set a `-RecordCountLimit` 
-
-✅ Get-AnchorOrgAuthSources (List an organization's authentication sources)
-
-✅ Get-AnchorOrgChildren (List an organization's child organizations)
-
-✅ Get-AnchorOrgGroups (List an organization's groups)
-
-✅ Get-AnchorOrgGuests (List an organization's guests) 
-   
-   Provides option to set a `-RecordCountLimit` 
-
-✅ Get-AnchorOrgMachines (List an organization's machines)
-
-✅ Get-AnchorOrgRoot (Get a root)
-
-   This call requires both a company_id and a root_id. Not sure why you would want to use this over getting the root metadata, which only requires a root_id.
-
-✅ Get-AnchorOrgRoots (List an organization's roots)
-
-✅ Get-AnchorOrgShare (Get a share)
-
-✅ Get-AnchorOrgShares (List an organization's shares)   
-
-✅ Get-AnchorOrgShareSubscribers( List share subscribers)
-
-   Makes the returned data structure more friendly. Contains a `-Raw` option if you prefer the original, unfriendly object structure.
-
-✅ Get-AnchorOrgUsage (Get usage for an organization)
-
-✅ Get-AnchorOrgUsers (List an organization's users)
-
-### Person (Account) functions
-
-✅ Get-AnchorPerson (Get a person)
-
-✅ Get-AnchorPersonActivity (List recent activity for a person)
-
-   Automatically gets activity descriptions and returns them as part of the object for human-friendly output.
-   
-   Provides option to set a `-RecordCountLimit` 
-
-### Root functions
-
-✅ Find-AnchorRootFilesAndFolders (Search files and folders)
-
-✅ Get-AnchorRootFilesModifiedSince (List recently modified files)
-
-✅ Get-AnchorRootLastModified (not specified in API)
-
-  Uses multiple API functions to determine the last time any file in a root was modified.
-
-✅ Get-AnchorRootMetadata (Get root metadata)
-
-## Management functions (Use at your own risk! Potential disruption, security violations, or data loss if used incorrectly.) 💣
-
-### General functions
-
-### Activity functions
-
 ✅ New-AnchorActivity (Create an activity record)
 
    Oddly enough, this command allows you to create false activity events in the activity log.
 
 ### File and Folder functions
+
+✅ Get-AnchorFileMetadata (Get file metadata)
+
+✅ Get-AnchorFolderMetadata (Get folder metadata)
 
 ⬜ Create a subfolder                                   
 
@@ -256,6 +147,12 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ### Group functions
 
+✅ Get-AnchorGroup (Get a group)
+
+✅ Get-AnchorGroupMembers (List group members)
+   
+   The API returns only the id's of member persons and groups. This function includes the `-Expand` option, to include group and person names in the results.
+
 ✅ New-AnchorGroup (Create a group)
 
    Can accept csv input.
@@ -276,7 +173,36 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ⬜ Delete a guest                                       
 
+### Guest functions
+
+✅ Get-AnchorGuest (Get a guest)
+
+   Provides an option to `-Expand` the object to include company_name and creator_name for human-friendly output.
+
+✅ Get-AnchorGuestFileShares (Get files and folders shared with a guest)
+   
+   Returned object includes a `created(local_offset)` field that is a valid PowerShell DateTime object with the correct local offset. This is convenient not only because it displays in local time, but because it can be used in PowerShell DateTime commands without additional conversion from a string or worrying about the time zone.
+   Optional `-Expand` parameter looks up the creator_name from the creator_id and adds it to the returned object.
+
 ### Machine functions
+
+✅ Get-AnchorMachine (Get a machine)
+
+✅ Get-AnchorMachineBackup (Get a backup)                      
+
+✅ Get-AnchorMachineBackups (List backups)
+
+❗ Get-AnchorMachineFseFiles (List files on a file server enabled machine)
+
+   This API call seems to be non-functional.
+
+✅ Get-AnchorMachineFseMap (Get a machine mapping)
+
+✅ Get-AnchorMachineFseMaps (List mapped paths on a file server enabled machine)
+
+   Includes `-Expand` property
+
+✅ Get-AnchorMachineStatus (Get a machine's status)
 
 ✅ New-AnchorMachineBackup (Create a backup)
 
@@ -289,6 +215,44 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 ⬜ Map a path on a file server enabled machine to a root
 
 ### Organization (Company) functions
+
+✅ Get-AnchorOrg (Get an organization)
+
+✅ Get-AnchorOrgActivity (List recent activity for an organization)
+
+   Automatically gets activity descriptions and returns them as part of the object for human-friendly output.
+
+   Provides option to set a `-RecordCountLimit` 
+
+✅ Get-AnchorOrgAuthSources (List an organization's authentication sources)
+
+✅ Get-AnchorOrgChildren (List an organization's child organizations)
+
+✅ Get-AnchorOrgGroups (List an organization's groups)
+
+✅ Get-AnchorOrgGuests (List an organization's guests) 
+   
+   Provides option to set a `-RecordCountLimit` 
+
+✅ Get-AnchorOrgMachines (List an organization's machines)
+
+✅ Get-AnchorOrgRoot (Get a root)
+
+   This call requires both a company_id and a root_id. Not sure why you would want to use this over getting the root metadata, which only requires a root_id.
+
+✅ Get-AnchorOrgRoots (List an organization's roots)
+
+✅ Get-AnchorOrgShare (Get a share)
+
+✅ Get-AnchorOrgShares (List an organization's shares)   
+
+✅ Get-AnchorOrgShareSubscribers( List share subscribers)
+
+   Makes the returned data structure more friendly. Contains a `-Raw` option if you prefer the original, unfriendly object structure.
+
+✅ Get-AnchorOrgUsage (Get usage for an organization)
+
+✅ Get-AnchorOrgUsers (List an organization's users)
 
 ⬜ Create an organization                               
 
@@ -308,6 +272,14 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ### Person (Account) functions
 
+✅ Get-AnchorPerson (Get a person)
+
+✅ Get-AnchorPersonActivity (List recent activity for a person)
+
+   Automatically gets activity descriptions and returns them as part of the object for human-friendly output.
+   
+   Provides option to set a `-RecordCountLimit` 
+
 ✅ New-AnchorPerson (Create a person)
 
    Accepts command line, pipeline, or CSV input for bulk additions, including adding accounts to more than one organization at a time.
@@ -320,6 +292,16 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ### Root functions
 
+✅ Find-AnchorRootFilesAndFolders (Search files and folders)
+
+✅ Get-AnchorRootFilesModifiedSince (List recently modified files)
+
+✅ Get-AnchorRootLastModified (not specified in API)
+
+  Uses multiple API functions to determine the last time any file in a root was modified.
+
+✅ Get-AnchorRootMetadata (Get root metadata)
+
 ⬜ Create a folder in a root                            
 
 ⬜ Lock a root                                          
@@ -328,7 +310,19 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ⬜ Upload a file to a root
 
-## Navigation functions 📁🧪
+## Development functions 🧪
+
+✅ Get-AnchorRawData
+
+   This is a straight API wrapper that returns exactly what the API returns.
+   
+✅ Update-AnchorModule
+
+   Alias: `ReloadAnchor`
+   
+   Exports the current Oauth token, re-imports the module, then updates the Oauth token.
+
+## Navigation functions 📁
 
 Yes. You can navigate the Anchor file system from the PowerShell command line! It's not a PSDrive. It's kind of like FTP. Ultimately, not all that practical, but an interesting distraction.
 
