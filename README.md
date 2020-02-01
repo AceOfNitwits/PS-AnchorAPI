@@ -81,7 +81,7 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
   Change the Web URI from which tokens are granted. Should work with self-hosted Anchor instances.
 
-## API functions 🐇
+## API functions 
 
 ### General functions
 
