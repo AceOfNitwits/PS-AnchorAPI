@@ -4,6 +4,8 @@
     RootModule = '.\Anchor-Api.psm1'
     NestedModules = @(
         '.\Anchor-ApiOauth.ps1',
+        '.\Anchor-Api_Helper_Functions.ps1',
+        '.\Anchor-Api_Machine_Functions.ps1',
         '.\Anchor-ApiReporting.ps1',
         '.\Anchor-ApiManagement.ps1',
         '.\Anchor-ApiNav.ps1'
@@ -18,6 +20,7 @@
         'Set-AnchorOauthUri',
         'Find-RootFilesAndFolders',
         'Get-AnchorActivity',
+        'New-AnchorActivity',
         'Get-AnchorActivityTypes',
         'Get-AnchorApiVersion',
         'Get-AnchorFolderMetadata',
@@ -34,7 +37,7 @@
         'New-AnchorMachineBackup',
         'Remove-AnchorMachineBackup',
         'Get-AnchorMachineBackups',
-        'Get-AnchorMachineFseFiles',
+        'Get-AnchorMachineLocalFolders',
         'Get-AnchorMachineFseMap',
         'Get-AnchorMachineFseMaps',
         'Get-AnchorMachineStatus',

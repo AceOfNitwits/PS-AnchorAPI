@@ -67,6 +67,7 @@ Class AnchorPerson {
     [string]$timezone
     [string]$type
     [string]$username
+    Hidden $tag
     Hidden [void]GeneratePwLastChangedPsLocal(){$this.pw_last_changed_ps_local = [string]$(Get-Date("$($this.pw_last_changed)`Z"))}
     [void]PopulateCompanyName(){$this.company_name = (Get-AnchorOrg -id ($this.company_id)).name}
 }
