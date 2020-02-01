@@ -3,14 +3,19 @@
     GUID = 'd4c837c2-5f26-4f08-8dfd-e1a1eb1a9d91'
     RootModule = '.\Anchor-Api.psm1'
     NestedModules = @(
+        '.\Anchor-Api_Class_Definitions.ps1',
         '.\Anchor-ApiOauth.ps1',
         '.\Anchor-Api_Helper_Functions.ps1',
         '.\Anchor-Api_Machine_Functions.ps1',
+        '.\Anchor-Api_Org_Functions.ps1',
+        '.\Anchor-Api_Person_Functions.ps1',
         '.\Anchor-ApiReporting.ps1',
         '.\Anchor-ApiManagement.ps1',
         '.\Anchor-ApiNav.ps1'
     )
     FunctionsToExport = @(
+        'Get-AnchorRawData', #Testing
+        'Update-AnchorModule', #Testing
         'Connect-AnchorApiSession',
         'Disconnect-AnchorApiSession',
         'Update-AnchorApiSession',
@@ -55,8 +60,9 @@
         'Get-AnchorOrgShareSubscribers',
         'Get-AnchorOrgUsers',
         'Get-AnchorOrgUsage',
-        'New-AnchorPerson',
         'Get-AnchorPerson',
+        'New-AnchorPerson',
+        'Remove-AnchorPerson',
         'Get-AnchorPersonActivity',
         'Get-AnchorRootFilesModifiedSince',
         'Get-AnchorRootLastModified',
@@ -78,6 +84,7 @@
         'AnchorRoot'
     )
     AliasesToExport = @(
+        'ReloadAnchor', #Testing
         'AnchorLogin',
         'AnchorLogon',
         'AnchorSignin',

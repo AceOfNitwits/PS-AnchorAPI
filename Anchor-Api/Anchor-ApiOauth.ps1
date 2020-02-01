@@ -143,6 +143,10 @@ param([string]$Username, [string]$Password)
 
         Write-Host "Oauth token obtained. New token will expire on $($oauthExpiry)`." -BackgroundColor Black -ForegroundColor Green
         Write-Host "Best practice: use Disconnect-AnchorApiSession (AnchorLogoff) when finished to revoke the Oauth token from the server." -ForegroundColor DarkYellow
+        Write-Host "This is an open-source project, not associated with Axcient."
+        Write-Host "Warning: The commands contained in this module can delete or modify configurations and data, and have not been tested in all scenarios." -ForegroundColor Red
+        Write-Host "Use or misuse of this code could result in disruption, security violations, or data loss." -ForegroundColor Red
+        Write-Host "Always test your workflows before deploying to live systems." -ForegroundColor Red -BackgroundColor Black
     }
     Else {
         Write-Host "Oauth token not obtained!" -BackgroundColor Black -ForegroundColor Red
@@ -256,8 +260,16 @@ Function Update-AnchorApiReadiness{
                 'suggested' {Update-AnchorApiSession}
             }
         }
-        'expired'{Connect-AnchorApiSession}
-        'not_present'{Connect-AnchorApiSession}
+        'expired'{
+            Connect-AnchorApiSession
+            # The Oauth State may have changed, so we need to update it before another function is called.
+            $oauthState = Get-AnchorOAuthState
+        }
+        'not_present'{
+            Connect-AnchorApiSession
+            # The Oauth State may have changed, so we need to update it before another function is called.
+            $oauthState = Get-AnchorOAuthState
+        }
     }
     Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
 }
