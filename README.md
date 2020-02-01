@@ -286,7 +286,12 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ⬜ Update a person                                      
 
-⬜ Delete a person                                      
+✅ Remove-AnchorPerson (Delete a person)
+
+   Accepts multiple values in the `-id` parameter, or pipeline input, for bulk deletions. 
+   ⚠ BE VERY CAREFUL WHAT YOU PASS TO THIS FUNCTION! Something like `$users = Get-AnchorOrg -Top | Get-AnchorOrgUsers; $users | Remove-AnchorPerson -Confirm:$false` will delete all users across all organizations without warning. (Just typing that gave me chills!)
+   Supports PowerShell `-Confirm` and `-WhatIf` common parameters to help avoid potential disasters.
+   🐛 All of the API parameters appear to be non-functional.
 
 ⬜ Create an account sync root                          
 
