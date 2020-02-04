@@ -2,7 +2,7 @@
 PowerShell module for managing Axcient Anchor via the v2 API
 
 This module is designed to administer and automate all aspects of the Anchor system that are available through the API.
-Functions should be PS-friendly, returning objects and accepting pipeline input where possible, including collections of objects, which allows for creation/modification/deletion of Anchor objects in bulk.
+Functions should be PS-friendly, returning objects and accepting pipeline input where possible, including collections of objects, which allows for creation/modification/deletion of Anchor objects in bulk. (See ModuleGoals.md.)
 
 # Why a PowerShell Module for Anchor?
 
