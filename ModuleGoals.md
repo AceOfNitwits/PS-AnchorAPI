@@ -1,6 +1,6 @@
 # Module Goals and Standards
 
-1. Every API endpoint should be accessible by a named function.
+1. Every API endpoint should be accessible by a named function (not just a generic function that handles multiple endpoints).
 1. Functions should be named in "PowerShell style", with a PowerShell-approved verb, followed by a dash, followed by the word, "Anchor", then the name of the base object-type being acted upon, then the secondary object type or action. For example, `Get-AnchorOrgMachines`, not `Get-AnchorMachines`, because the function requires a company_id (org).
 1. If multiple endpoints can be logically combined into a single function (downloading a file and downloading a folder are separate endpoints, but could, logically be part of the same function) they can be. 
 1. Where logical, each function should accept pipeline input of multiple objects, and arrays of parameter values.
