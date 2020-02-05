@@ -220,6 +220,10 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ### Organization (Company) functions
 
+⬜ Find-AnchorOrg (not an API function)
+
+   Recurse through all organizations to find orgs that match a particular filter (name, time-zone, etc)
+
 ✅ Get-AnchorOrg (Get an organization)
 
 ✅ Get-AnchorOrgActivity (List recent activity for an organization)
@@ -232,6 +236,8 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ✅ New-AnchorOrgChild (Create an organization)
 
+   See CSV_Import_Files folder for an example import file.
+   
    Have not yet tested CSV import.
 
 ✅ Get-AnchorOrgChildren (List an organization's child organizations)
