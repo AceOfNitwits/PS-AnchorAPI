@@ -230,6 +230,10 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ✅ Get-AnchorOrgAuthSources (List an organization's authentication sources)
 
+✅ New-AnchorOrgChild (Create an organization)
+
+   Have not yet tested CSV import.
+
 ✅ Get-AnchorOrgChildren (List an organization's child organizations)
 
 ✅ Get-AnchorOrgGroups (List an organization's groups)
@@ -257,8 +261,6 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 ✅ Get-AnchorOrgUsage (Get usage for an organization)
 
 ✅ Get-AnchorOrgUsers (List an organization's users)
-
-⬜ Create an organization                               
 
 ⬜ Update an organization                               
 
