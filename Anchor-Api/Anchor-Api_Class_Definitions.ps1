@@ -150,3 +150,87 @@ Class AnchorActivity {
 
 }
 
+Class AnchorOrgPolicy{
+    [bool]$admin_browse_files
+    [bool]$admin_browse_remote
+    [bool]$admin_create_users
+    [bool]$ad_enabled
+    [string]$api_ratelimit
+    [bool]$api_ratelimit_enabled
+    [bool]$backups_enabled
+    [bool]$backups_purge_deleted
+    [int]$backups_purge_deleted_frequency
+    [bool]$backups_trim_revisions
+    [int]$backups_trim_revisions_frequency
+    [bool]$branding_enabled
+    [int]$change_password_frequency
+    [int]$company_id
+    [string]$create_orgs_until
+    [int]$deactivate_token_frequency
+    [string[]]$excluded_extensions
+    [bool]$file_server_enabled
+    [string[]]$locked_extensions
+    [int]$max_file_size
+    [int]$num_orgs_maximum
+    [int]$num_users_maximum
+    [int]$num_users_minimum
+    [bool]$psa_enabled
+    [bool]$purge_deleted
+    [int]$purge_deleted_frequency
+    [bool]$require_mobile_lock
+    [bool]$require_two_step_auth
+    [bool]$secure_shares
+    [bool]$service_plans_enabled
+    [long]$space_quota
+    [string]$space_quota_formatted
+    [int]$trial_length_days
+    [bool]$trim_revisions
+    [int]$trim_revisions_x
+    [string]$type
+    [bool]$user_create_backups
+    [bool]$user_create_shares
+    [bool]$user_lock_files
+    [bool]$user_overwrite_collisions
+    [bool]$user_purge_deleted
+    [bool]$user_rollback
+    [bool]$user_trim_revisions
+    [bool]$webdav_enabled
+    [bool]$web_editor_enabled
+    [bool]$web_preview_enabled
+    [bool]$web_wopi_enabled
+}
+
+Class AnchorOrg {
+    [bool]$active
+    [object]$bandwidth_throttle
+    [string]$created
+    [datetime]$created_ps_local
+    [int]$default_encryption
+    [string]$description
+    [string]$email
+    [int]$email_server_id
+    [bool]$email_templates
+    [string]$hostname
+    [pscustomobject]$i18n
+    [int]$id
+    [string]$locale
+    [string]$name
+    [int]$parent_id
+    [object]$plan_id
+    [AnchorOrgPolicy]$policy
+    [bool]$privacy_mode
+    [string]$share_disclaimer
+    [string]$slug
+    [object]$subscription_uuid
+    [bool]$throttled
+    [object]$throttle_exception_days
+    [object]$throttle_exception_dow
+    [object]$throttle_exception_end
+    [object]$throttle_exception_start
+    [object]$throttle_exception_throttle
+    [string]$timezone
+    [string]$trial_until
+    [datetime]$trial_until_ps_local
+    [string]$type
+    [object]$tag
+}

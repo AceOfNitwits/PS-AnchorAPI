@@ -147,6 +147,178 @@ Function Get-AnchorOrg {
     }
 }
 
+Function New-AnchorOrgChild{
+<#
+    .LINK
+    http://developer.anchorworks.com/v2/#create-an-organization
+#>
+    [CmdletBinding(SupportsShouldProcess,ConfirmImpact='Medium')]
+    [Alias('New-AnchorCompanyChild')]
+    param(
+        [Parameter(ParameterSetName='csv')][string]$FromCsv,
+        [Parameter(ParameterSetName='commandLine',Mandatory,Position=0,HelpMessage='The company_id of the parent organization')][int]$id,
+        [Parameter(ParameterSetName='commandLine',Mandatory,Position=1,HelpMessage='Name of the new organization')][string]$name,
+        [Parameter(ParameterSetName='commandLine',Mandatory,Position=2,HelpMessage='the new organization''s contact email address.')][string]$email,
+        [Parameter(ParameterSetName='commandLine',Position=3,HelpMessage='a unique hostname for the organization, used in links to resources and shares. This should be only the third-level portion of the hostname (e.g. "company" in "company.example.com"). Not required for single host configurations.')][string]$hostname,
+        [Parameter(ParameterSetName='commandLine',Position=4,HelpMessage='a unique, URL-friendly organization identifier. For example, an organization named "Widgets, Ltd." may have the slug "widgets-ltd".')][string]$slug,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='a description of the organization. Defaults to empty.')][string]$description,
+        #[Parameter(ParameterSetName='commandLine',HelpMessage='the ID of the parent organization. Defaults to the root organization.')][int]$parent_id, #This does nothing.
+        [Parameter(ParameterSetName='commandLine',HelpMessage='a date/time the organization trial period expires. Defaults to no trial period.')][datetime]$trial_until,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='a block of text that will be sent with each share notification email.')][string]$share_disclaimer,
+        #[Parameter(ParameterSetName='commandLine',HelpMessage='whether users must log in to access the share. "true" or "false". Default "false".')][switch]$login_required,
+        #[Parameter(ParameterSetName='commandLine',HelpMessage='a date the share expires. Defaults to no expiration.')][datetime]$expires,
+        #[Parameter(ParameterSetName='commandLine',HelpMessage='a comma-separated list of subscribers by email address.')][string[]]$subscribers,
+        #[Parameter(ParameterSetName='commandLine',HelpMessage='"true" or "false". Default "false".')][switch]$notify_subscribers,
+        #[Parameter(ParameterSetName='commandLine',HelpMessage='the total number of downloads allowed for the share. Defaults to unlimited.')][int]$download_limit,
+        #[Parameter(ParameterSetName='commandLine',HelpMessage='whether you want to be notified of downloads. "true" or "false". Default "false".')][switch]$download_notify,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='space quota in bits(?). Default 107374182400.')][long]$space_quota,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='max file size in MB. Default 300.')][int]$max_file_size,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='excluded extensions. Default ".$$,.$db,.113,.3g2,.3gp,.3gp2,.3gpp,.3mm,.a,.abf,.abk,.afm,.ani,.ann,.asf,.avi,.avs,.bac,.bak,.bck,.bcm,.bd2,.bdb,.bdf,.bkf,.bkp,.bmk,.bsc,.bsf,.cab,.cf1,.chm,.chq,.chw,.cnt,.com,.cpl,.cur,.dbs,.dev,.dfont,.dll,.dmp,.drv,.dv,.dvd,.dvr,.dvr-ms,.eot,.evt,.exe,.ffa,.ffl,.ffo,.ffx,.flc,.flv,.fnt,.fon,.ftg,.fts,.fxp,.gid,.grp,.hdd,.hlp,.hxi,.hxq,.hxr,.hxs,.ico,.idb,.idx,.ilk,.img,.inf,.ini,.ins,.ipf,.iso,.isp,.its,.jar,.jse,.kbd,.kext,.key,.lex,.lib,.library-ms,.lnk,.log,.lwfn,.m1p,.m1v,.m2p,.m2v,.m4v,.mem,.mkv,.mov,.mp2,.mp2v,.mp4,.mpe,.mpeg,.mpg,.mpv,.mpv2,.msc,.msi,.msm,.msp,.mst,.ncb,.nt,.nvram,.o,.obj,.obs,.ocx,.old,.ost,.otf,.pch,.pd6,.pf,.pfa,.pfb,.pfm,.pnf,.pol,.pref,.prf,.prg,.prn,.pst,.pvs,.pwl,.QBA,.QBA.TLG,.QBW,.QBW.TLG,.qt,.rdb,.reg,.rll,.rox,.sbr,.scf,.scr,.sdb,.shb,.suit,.swf,.swp,.sys,.theme,.tivo,.tmp,.tms,.ttc,.ttf,.v2i,.vbe,.vga,.vgd,.vhd,.video,.vmc,.vmdk,.vmsd,.vmsn,.vmx,.vxd,.win,.wpk".')][string[]]$excluded_extensions,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='allow users to erase revisions? Default "false".')][switch]$user_trim_revisions,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='auto-erase revisions? Default "false".')][switch]$trim_revisions,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='erase revisions for files unchanged after a certain number of days. Default.')][int]$trim_revisions_x,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='allow users to erase deleted files? Default "false".')][switch]$user_purge_deleted,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='auto-erase deleted files? Default "false".')][switch]$purge_deleted,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='erase deleted files after a certain number of days. Default never.')][int]$purge_deleted_frequency,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='deactivate API tokens after a certain number of days. Default 30.')][int]$deactivate_token_frequency,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='allow users to create their own backups? Default "true".')][switch]$user_create_backups,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='allow users to share files? Default "true".')][switch]$user_create_shares,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='force new share links to require login? Default "false".')][switch]$secure_shares,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='allow users to overwrite collisions? Default "false".')][switch]$user_overwrite_collisions,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='allow users to lock files? Default "false".')][switch]$user_lock_files,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='use filesystem permissions to enforce locks on. Default ".doc,.docx,.xls,.xlsx,.ppt,.pptx,.pdf,.txt,.xlsb,.xlsm,.csv,.docm,.dotx,.dotm,.pub,.wpd,.odt,.ott,.oth,.odm,.ots,.odp,.odg,.otp,.odf,.oxt,.odc,.ods,.vdx,.vsx,.vtx,.one".')][string[]]$locked_extensions,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='let organization admins browse user files? Default "true".')][switch]$admin_browse_files,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='let organization admins browse remote files? Default "true".')][switch]$admin_browse_remote,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='let organization admins create users? Default "true".')][switch]$admin_create_users,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='force password change after a certain number of days. Default never.')][int]$change_password_frequency,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='require two-step authentication? Default "false".')][switch]$require_two_step_auth,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='min number of users. Default 0.')][int]$num_users_minimum,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='max number of users. Default none.')][int]$num_users_maximum,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='max number of suborganizations. Default 10.')][int]$num_orgs_maximum,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='enable backup creation? Default "true".')][switch]$backups_enabled,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='enable branding support? Default "true".')][switch]$branding_enabled,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='enable WebDAV support? Default "true".')][switch]$webdav_enabled,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='enable PSA support? Default "true".')][switch]$psa_enabled,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='enable directory server authentication support? Default "true".')][switch]$ad_enabled,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='enable File Server Enablement? Default "true".')][switch]$file_server_enabled,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='trial length in days. Default 30.')][int]$trial_length_days,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='enable service plans? Default "false".')][switch]$service_plans_enabled,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='require passcode lock on mobile devices? Default "false".')][switch]$require_mobile_lock,
+        [Parameter(ParameterSetName='commandLine',HelpMessage='allow users to preview files on the web? Default "true".')][switch]$web_preview_enabled
+    
+    )
+    begin{
+        Write-Verbose "$($MyInvocation.MyCommand) started at $(Get-Date)"
+        Update-AnchorApiReadiness
+        $apiCalls=@()
+        $apiQuery = @{
+            name=$name
+            email=$email
+            hostname=$hostname
+            slug=$slug
+        }
+        If($description){$apiQuery+=@{description=$description}}
+        #If($parent_id){$apiQuery+=@{parent_id=$parent_id}}
+        If($trial_until){$apiQuery+=@{trial_until=$trial_until}}
+        If($share_disclaimer){$apiQuery+=@{share_disclaimer=$share_disclaimer}}
+        #If($login_required){$apiQuery+=@{login_required=$login_required}}
+        #If($expires){$apiQuery+=@{expires=$expires}}
+        #If($subscribers){$apiQuery+=@{subscribers=$subscribers}} # Is this really a new org parameter?
+        #If($notify_subscribers){$apiQuery+=@{notify_subscribers=$notify_subscribers}} # Really?
+        #If($download_limit){$apiQuery+=@{download_limit=$download_limit}} # Really?
+        #If($download_notify){$apiQuery+=@{download_notify=$download_notify}} # Really?
+        If($space_quota){$apiQuery+=@{space_quota=$space_quota}}
+        If($max_file_size){$apiQuery+=@{max_file_size=$max_file_size}}
+        If($excluded_extensions){$apiQuery+=@{excluded_extensions=($excluded_extensions -join ',')}}
+        If($user_trim_revisions){$apiQuery+=@{user_trim_revisions=$user_trim_revisions}}
+        If($trim_revisions){$apiQuery+=@{trim_revisions=$trim_revisions}}
+        If($trim_revisions_x){$apiQuery+=@{trim_revisions_x=$trim_revisions_x}}
+        If($user_purge_deleted){$apiQuery+=@{user_purge_deleted=$user_purge_deleted}}
+        If($purge_deleted){$apiQuery+=@{purge_deleted=$purge_deleted}}
+        If($purge_deleted_frequency){$apiQuery+=@{purge_deleted_frequency=$purge_deleted_frequency}}
+        If($deactivate_token_frequency){$apiQuery+=@{deactivate_token_frequency=$deactivate_token_frequency}}
+        If($user_create_backups){$apiQuery+=@{user_create_backups=$user_create_backups}}
+        If($user_create_shares){$apiQuery+=@{user_create_shares=$user_create_shares}}
+        If($secure_shares){$apiQuery+=@{secure_shares=$secure_shares}}
+        If($user_overwrite_collisions){$apiQuery+=@{user_overwrite_collisions=$user_overwrite_collisions}}
+        If($user_lock_files){$apiQuery+=@{user_lock_files=$user_lock_files}}
+        If($locked_extensions){$apiQuery+=@{locked_extensions=($locked_extensions -join ',')}}
+        If($admin_browse_files){$apiQuery+=@{admin_browse_files=$admin_browse_files}}
+        If($admin_browse_remote){$apiQuery+=@{admin_browse_remote=$admin_browse_remote}}
+        If($admin_create_users){$apiQuery+=@{admin_create_users=$admin_create_users}}
+        If($change_password_frequency){$apiQuery+=@{change_password_frequency=$change_password_frequency}}
+        If($require_two_step_auth){$apiQuery+=@{require_two_step_auth=$require_two_step_auth}}
+        If($num_users_minimum){$apiQuery+=@{num_users_minimum=$num_users_minimum}}
+        If($num_users_maximum){$apiQuery+=@{num_users_maximum=$num_users_maximum}}
+        If($num_orgs_maximum){$apiQuery+=@{num_orgs_maximum=$num_orgs_maximum}}
+        If($backups_enabled){$apiQuery+=@{backups_enabled=$backups_enabled}}
+        If($branding_enabled){$apiQuery+=@{branding_enabled=$branding_enabled}}
+        If($webdav_enabled){$apiQuery+=@{webdav_enabled=$webdav_enabled}}
+        If($psa_enabled){$apiQuery+=@{psa_enabled=$psa_enabled}}
+        If($ad_enabled){$apiQuery+=@{ad_enabled=$ad_enabled}}
+        If($file_server_enabled){$apiQuery+=@{file_server_enabled=$file_server_enabled}}
+        If($trial_length_days){$apiQuery+=@{trial_length_days=$trial_length_days}}
+        If($service_plans_enabled){$apiQuery+=@{service_plans_enabled=$service_plans_enabled}}
+        If($require_mobile_lock){$apiQuery+=@{require_mobile_lock=$require_mobile_lock}}
+        If($web_preview_enabled){$apiQuery+=@{web_preview_enabled=$web_preview_enabled}}
+    }
+    process{
+        If($FromCsv){
+            # File processing
+            $arrayParams = @() #These are the names of parameters that could possibly contain multiple values (arrays) and need to be passed multiple times.
+            $csvData = Import-Csv -Path $FromCsv
+            #$csvFields = Get-Member -InputObject $csvData[0] | Where-Object MemberType -eq NoteProperty
+            $csvData | ForEach-Object {
+                $apiQuery = @{}
+                foreach ($property in $_.PSObject.Properties){
+                    If ($property.Name -in $arrayParams){ 
+                        # This parameter needs to be formatted as an array so that it can later be passed twice.
+                        $apiQuery[$($property.Name)] = $property.Value.Replace('"','').split(',')
+                    }
+                    Else{
+                        $apiQuery[$($property.Name)] = $property.Value
+                    }
+                }
+                # If fields with multiple values need to be passed multiple times to the API server...
+                # You can't have duplicate keys in a hashtable, so we have to convert the hashtable to a URL string.
+                If(($apiQuery.group_ids -is [array]) -or ($apiQuery.dept_shares -is [array])) {
+                    $apiQueryString=''
+                    $first=$true
+                    ForEach ($key in $apiQuery.keys){
+                        ForEach ($value in $apiQuery[$key]) {
+                            If($first){
+                                $first=$false
+                            }
+                            Else{
+                                $apiQueryString += '&'
+                            }
+                            If($value -eq 'TRUE'){$value='true'}
+                            $apiQueryString += [System.Web.HttpUtility]::HtmlEncode($Key) + "=" + [System.Web.HttpUtility]::HtmlEncode($value);
+                        }
+                    }
+                    $apiQuery = $apiQueryString
+                }
+            $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
+            $apiCalls += $apiCall
+            }
+        }
+        Else{
+            #Create the apiCalls hash table that will be passed to the Invoke-AnchorApi function.
+            $apiEndpoint = "organization/$id/organizations/create"
+            $apiCall = @{'ApiEndpoint'=$apiEndpoint;'ApiQuery'=$apiQuery}
+            $affectedItem = Get-AnchorOrg -id $parent_id | Select-Object id, name
+            If($PSCmdlet.ShouldProcess("New Organization: $name; Parent: $($affectedItem.name) (id: $($affectedItem.id))", 'Create Organization')){
+                $apiCalls += $apiCall
+            }
+        }
+    }
+    end{
+        $results = $apiCalls | Invoke-anchorAPIPost
+        [AnchorOrg]$results
+        Write-Verbose "$($MyInvocation.MyCommand) completed at $(Get-Date)"
+    }
+ }
+ 
 Function Get-AnchorOrgActivity {
 <#
     .LINK
