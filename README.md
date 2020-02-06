@@ -220,10 +220,6 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
 
 ### Organization (Company) functions
 
-⬜ Find-AnchorOrg (not an API function)
-
-   Recurse through all organizations to find orgs that match a particular filter (name, time-zone, etc)
-
 ✅ Get-AnchorOrg (Get an organization)
 
 ✅ Get-AnchorOrgActivity (List recent activity for an organization)
@@ -241,6 +237,8 @@ Functions should be PS-friendly, returning objects and accepting pipeline input 
    Have not yet tested CSV import.
 
 ✅ Get-AnchorOrgChildren (List an organization's child organizations)
+
+   Optionally, include the parent organization in the results using the `-IncludeParent` switch. Using the function in this manner, the results can be piped to the `Where-Object` cmdlet to find a particular company by name, time zone, policy value, etc.
 
 ✅ Get-AnchorOrgGroups (List an organization's groups)
 
