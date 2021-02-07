@@ -25,6 +25,7 @@ Function Connect-AnchorApiSession{
     param(
         [Parameter(ParameterSetName='up',Position=0)][string]$Username, 
         [Parameter(ParameterSetName='up',Position=1)][string]$Password,
+        [Parameter(ParameterSetName='up',Position=3,HelpMessage='Time-based, one-time password')][string]$Totp,
         [Parameter(ValueFromPipeline)][PSCredential]$InputObject
     )
     If($InputObject){
@@ -35,7 +36,7 @@ Function Connect-AnchorApiSession{
         # 🧹 Cleanup
         [Runtime.InteropServices.Marshal]::FreeBSTR($PasswordBstr)
     }
-    [AnchorOauth]$Global:anchorOauthToken = New-AnchorOauthToken -Username $Username -Password $Password
+    [AnchorOauth]$Global:anchorOauthToken = New-AnchorOauthToken -Username $Username -Password $Password -Totp $Totp
 }
 
 Function Update-AnchorApiSession{
@@ -93,20 +94,25 @@ Function New-AnchorOauthToken{
     .LINK
     http://developer.anchorworks.com/oauth2/#request-an-access-token
 #>
-param([string]$Username, [string]$Password)
+param([string]$Username, [string]$Password, [String]$Totp)
     $grantType = "password"
     $clientId = "anchor"
     [AnchorOauth]$oauthToken = @{}
     Do {
         If (-not ($Username -and $Password)){
-            $credentials = Get-Credential -UserName $Username -Message "Anchor Credentials"
+            $credentials = Get-Credential -Message "Anchor Credentials"
             $Username = $credentials.GetNetworkCredential().UserName
             $Password = $credentials.GetNetworkCredential().Password
         }
         #If (-not $Password){$Password = Read-Host -Prompt "Anchor password for $Username"}
         # At this point, we're assuming the account has 2-step auth.
         #   In the future, we should test for this and only prompt if it's necessary.
-        $authCode = Read-Host -Prompt "Time-based token for $Username"
+        If($Totp){
+            $authCode = $Totp
+        }
+        Else{
+            $authCode = Read-Host -Prompt "Time-based token for $Username"
+        }
         $payload = @{
             "grant_type" = $grantType
             "client_id" = $clientId
